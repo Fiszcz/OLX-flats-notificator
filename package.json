@@ -1,0 +1,9 @@
+{
+  "name": "olx-flats-notificator",
+  "version": "0.0.0",
+  "author": "Filip Szcześniak - fiszczu@gmail.com",
+  "private": true,
+  "dependencies": {
+    "puppeteer": "^1.12.2"
+  }
+}
