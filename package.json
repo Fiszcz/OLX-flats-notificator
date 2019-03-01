@@ -9,9 +9,11 @@
   },
   "dependencies": {
     "@types/node": "^11.9.6",
+    "@types/nodemailer": "^4.6.6",
     "@types/puppeteer": "^1.12.1",
     "delay": "^4.1.0",
     "node-filter-async": "^1.1.1",
+    "nodemailer": "^5.1.1",
     "puppeteer": "^1.12.2",
     "typescript": "^3.3.3333"
   }

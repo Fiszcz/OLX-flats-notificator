@@ -2,6 +2,7 @@ import filterAsync from "node-filter-async";
 import * as puppeteer from 'puppeteer';
 import {ElementHandle} from "puppeteer";
 import delay from "delay";
+import {sendEmail} from "./emailService";
 
 async function run() {
     const browser = await puppeteer.launch();
@@ -42,15 +43,21 @@ async function run() {
             const advertisementHref = await advertisement.$eval('a.link', (linkElement) => {
                 return linkElement.getAttribute('href')
             });
-            console.log(advertisementHref);
+            const advertisementTitle = await advertisement.$eval('a strong', (titleElement) => {
+                return titleElement.innerHTML
+            });
+            console.log('Open advertisement: ' + advertisementTitle + '\nWith address: ' + advertisementHref + '\n\n');
 
             const page = await browser.newPage();
             await page.setViewport({width: 1280, height: 1080});
             await page.goto(advertisementHref!);
             await delay(10000);
-            const screenshotName = '../screenshots/' + (Math.floor(Math.random() * 999999) + 1).toString() + '.png';
-            await page.screenshot({ path: screenshotName, fullPage: true});
-            console.log('Screeanshot has been taken - file: ' + screenshotName + ' from: ' + advertisementHref);
+            const screenshotPath = '../screenshots/' + (Math.floor(Math.random() * 999999) + 1).toString() + '.png';
+            await page.screenshot({ path: screenshotPath, fullPage: true});
+            console.log('Screeanshot has been taken - file: ' + screenshotPath + ' from: ' + advertisementHref);
+
+            sendEmail(screenshotPath, advertisementHref!, advertisementTitle);
+
             await page.close();
         });
 
