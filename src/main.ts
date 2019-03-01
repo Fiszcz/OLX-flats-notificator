@@ -1,6 +1,7 @@
 import filterAsync from "node-filter-async";
 import * as puppeteer from 'puppeteer';
 import {ElementHandle} from "puppeteer";
+import delay from "delay";
 
 async function run() {
     const browser = await puppeteer.launch();
@@ -42,6 +43,15 @@ async function run() {
                 return linkElement.getAttribute('href')
             });
             console.log(advertisementHref);
+
+            const page = await browser.newPage();
+            await page.setViewport({width: 1280, height: 1080});
+            await page.goto(advertisementHref!);
+            await delay(10000);
+            const screenshotName = '../screenshots/' + (Math.floor(Math.random() * 999999) + 1).toString() + '.png';
+            await page.screenshot({ path: screenshotName, fullPage: true});
+            console.log('Screeanshot has been taken - file: ' + screenshotName + ' from: ' + advertisementHref);
+            await page.close();
         });
 
         setNewPointInTime(timeOfCheck.getHours(), timeOfCheck.getMinutes());
