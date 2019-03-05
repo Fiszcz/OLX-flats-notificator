@@ -28,5 +28,5 @@ export const sendEmail = (pathToPicture: string, webAddress: string, title: stri
         } else {
             console.log('Email sent: ' + title);
         }
-    })
+    });
 };

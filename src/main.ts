@@ -1,8 +1,9 @@
 import filterAsync from "node-filter-async";
 import * as puppeteer from 'puppeteer';
-import {ElementHandle} from "puppeteer";
+import { ElementHandle } from "puppeteer";
 import delay from "delay";
-import {sendEmail} from "./emailService";
+import { sendEmail } from "./emailService";
+import { findLocationOfFlatInDescription } from "./positionFinder";
 
 async function run() {
     const browser = await puppeteer.launch();
@@ -12,8 +13,8 @@ async function run() {
     await page.click('.cookie-close');
 
     const firstDate = new Date();
-    let hour = firstDate.getHours();
-    let minutes = firstDate.getMinutes();
+    let hour = 19;
+    let minutes = 50;
 
     const setNewPointInTime = (newHour: number, newMinutes: number) => {
         hour = newHour;
@@ -22,7 +23,7 @@ async function run() {
 
     const getDifferenceBetweenTimeOfAdvertisementAndTimeOfLastChecking = async (advertisement: ElementHandle) => {
         const innerHTMLOfTimeElement = await advertisement.$eval('.breadcrumb:nth-child(2)', (element) => {
-            return element.innerHTML
+            return element.innerHTML;
         });
         const partsOfTime = innerHTMLOfTimeElement.split(':');
         const hourOfAdvertisement = Number(partsOfTime[0].slice(-2));
@@ -41,22 +42,31 @@ async function run() {
         });
         filteredAdvertisements.map(async (advertisement) => {
             const advertisementHref = await advertisement.$eval('a.link', (linkElement) => {
-                return linkElement.getAttribute('href')
+                return linkElement.getAttribute('href');
             });
             const advertisementTitle = await advertisement.$eval('a strong', (titleElement) => {
-                return titleElement.innerHTML
+                return titleElement.innerHTML;
             });
             console.log('Open advertisement: ' + advertisementTitle + '\nWith address: ' + advertisementHref + '\n\n');
 
             const page = await browser.newPage();
             await page.setViewport({width: 1280, height: 1080});
-            await page.goto(advertisementHref!);
             await delay(10000);
+            await page.goto(advertisementHref!);
+
+            let description;
+            if (advertisementHref!.startsWith('https://www.otodom.pl')) {
+                description = await page.$('section.section-description');
+            } else {
+                description = await page.$('div.clr.large');
+            }
+            const findedPosition = findLocationOfFlatInDescription(advertisementTitle + ' ' + description);
+
             const screenshotPath = '../screenshots/' + (Math.floor(Math.random() * 999999) + 1).toString() + '.png';
             await page.screenshot({ path: screenshotPath, fullPage: true});
             console.log('Screeanshot has been taken - file: ' + screenshotPath + ' from: ' + advertisementHref);
 
-            sendEmail(screenshotPath, advertisementHref!, advertisementTitle);
+            sendEmail(screenshotPath, advertisementHref!, advertisementTitle + ' Location: ' + findedPosition);
 
             await page.close();
         });
