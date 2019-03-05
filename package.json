@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "watch-ts": "tsc -w src/main.ts",
-    "olx-notificator": "node dist/src/main.js"
+    "olx-notificator": "node dist/src/main.js",
+    "test": "jest"
   },
   "dependencies": {
     "@types/node": "^11.9.6",
@@ -16,5 +17,10 @@
     "nodemailer": "^5.1.1",
     "puppeteer": "^1.12.2",
     "typescript": "^3.3.3333"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.9",
+    "jest": "^24.1.0",
+    "ts-jest": "^24.0.0"
   }
 }
