@@ -2,5 +2,13 @@
   "emailAddress": "",
   "emailPassword": "",
   "emailService": "gmail",
-  "emailsReceiver": ""
+  "emailsReceiver": "",
+  "GoogleMapsKey": "",
+  "transportDestination": "",
+  "departureTime": {
+    "month": 3,
+    "day": 28,
+    "hour": 9,
+    "minute": 0
+  }
 }
