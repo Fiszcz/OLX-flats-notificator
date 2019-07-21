@@ -11,5 +11,6 @@
     "hour": 9,
     "minute": 0
   },
-  "filterUrl": ""
+  "filterUrl": "",
+  "checkInterval": 3600000
 }

@@ -8,7 +8,7 @@ import { websiteSelectors } from "../config/websiteSelectors";
 
 const config =  require("../config/config.json");
 
-async function run() {
+(async () => {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
@@ -94,9 +94,7 @@ async function run() {
     };
 
     await examineAdvertisements();
-    setInterval(examineAdvertisements, 3600000);
+    setInterval(examineAdvertisements, config.checkInterval);
 
     // await browser.close();
-}
-
-run();
+})();
