@@ -1,7 +1,7 @@
 import axios from 'axios';
 const config =  require("../config/config.json");
 
-const transportDestination = config.transportDestination.replace(' ', '+');
+const transportDestination = config.transportDestination.split(' ').join('+');
 
 const departureTime = new Date();
 departureTime.setMonth(config.departureTime.month);
@@ -19,19 +19,21 @@ export interface TransportInformation {
 export const checkTransportTime = async (placeDescription: string): Promise<TransportInformation | undefined> => {
 
     const informationAboutTransport = await axios.get('https://maps.googleapis.com/maps/api/directions/json' +
-        '?origin=' + placeDescription.replace(' ', '+') +
+        '?origin=' + placeDescription.split(' ').join('+') + '+Warszawa' +
         '&destination=' + transportDestination +
         '&mode=transit' +
         '&departure_time=' + departureTimeInSeconds +
         '&key=' + config.GoogleMapsKey)
         .then((resp: any) => resp.data.routes[0].legs[0]);
 
-    if (!!informationAboutTransport)
+    if (!!informationAboutTransport) {
+        console.log('[Google Maps]' + informationAboutTransport.duration.text + ' to ' + placeDescription);
         return {
             transportSteps: informationAboutTransport.steps,
             textTime: informationAboutTransport.duration.text,
-            timeInSeconds: informationAboutTransport.duarion.value,
+            timeInSeconds: informationAboutTransport.duration.value,
         };
+    }
     return undefined;
 
 };

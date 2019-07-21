@@ -9,7 +9,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-export const sendEmail = (pathToPicture: string, webAddress: string, title: string) => {
+export const sendEmail = (pathToPicture: string, webAddress: string, title: string, description: string) => {
     const mailOptions = {
         from: emailConfig.emailAddress,
         to: emailConfig.emailsReceiver,
@@ -19,7 +19,7 @@ export const sendEmail = (pathToPicture: string, webAddress: string, title: stri
             path: pathToPicture,
             cid: 'screenshot'
         }],
-        html: 'Website: ' + webAddress + '\n' + '<img src="cid:screenshot">',
+        html: 'Website: ' + webAddress + '\n' + description + '\n' + '<img src="cid:screenshot">',
     };
 
     transporter.sendMail(mailOptions, (error) => {
