@@ -1,10 +1,10 @@
 import filterAsync from "node-filter-async";
-import * as puppeteer from 'puppeteer';
-import { ElementHandle } from "puppeteer";
+import puppeteer, {ElementHandle} from 'puppeteer';
 import delay from "delay";
 import { sendEmail } from "./emailService";
 import { findLocationOfFlatInDescription } from "./positionFinder";
 import { checkTransportTime, TransportInformation } from "./transportConnection";
+import { websiteSelectors } from "../config/websiteSelectors";
 
 const config =  require("../config/config.json");
 
@@ -13,7 +13,7 @@ async function run() {
     const page = await browser.newPage();
 
     await page.goto(config.filterUrl, {waitUntil: 'domcontentloaded'});
-    await page.click('.cookie-close');
+    await page.click(websiteSelectors.closeCookie);
 
     const firstDate = new Date();
     let hour = 19;
@@ -25,7 +25,7 @@ async function run() {
     };
 
     const getDifferenceBetweenTimeOfAdvertisementAndTimeOfLastChecking = async (advertisement: ElementHandle) => {
-        const innerHTMLOfTimeElement = await advertisement.$eval('.breadcrumb:nth-child(2)', (element) => {
+        const innerHTMLOfTimeElement = await advertisement.$eval(websiteSelectors.advertisementTimePublication, (element) => {
             return element.innerHTML;
         });
         const partsOfTime = innerHTMLOfTimeElement.split(':');
@@ -36,18 +36,18 @@ async function run() {
 
     const examineAdvertisements = async () => {
         const timeOfCheck = new Date();
-        const otherAdvertisementsTable = (await page.$$('table.offers'));
+        const otherAdvertisementsTable = (await page.$$(websiteSelectors.tableOffers));
 
-        const advertisements: ElementHandle[] = await otherAdvertisementsTable[1].$$('tr.wrap');
+        const advertisements: ElementHandle[] = await otherAdvertisementsTable[1].$$(websiteSelectors.advertisements);
         const filteredAdvertisements = await filterAsync(advertisements, async (advertisement) => {
             const difference = await getDifferenceBetweenTimeOfAdvertisementAndTimeOfLastChecking(advertisement);
             return difference >= 0;
         });
         filteredAdvertisements.map(async (advertisement) => {
-            const advertisementHref = await advertisement.$eval('a.link', (linkElement) => {
+            const advertisementHref = await advertisement.$eval(websiteSelectors.advertisementLink, (linkElement) => {
                 return linkElement.getAttribute('href');
             });
-            const advertisementTitle = await advertisement.$eval('a strong', (titleElement) => {
+            const advertisementTitle = await advertisement.$eval(websiteSelectors.advertisementTitle, (titleElement) => {
                 return titleElement.innerHTML;
             });
             console.log('Open advertisement: ' + advertisementTitle + '\nWith address: ' + advertisementHref + '\n\n');
@@ -59,9 +59,9 @@ async function run() {
 
             let advertisementDescription;
             if (advertisementHref!.startsWith('https://www.otodom.pl'))
-                advertisementDescription = await page.$('section.section-description');
+                advertisementDescription = await page.$(websiteSelectors.otoDom.advertisementDescription);
             else
-                advertisementDescription = await page.$('div.clr.large');
+                advertisementDescription = await page.$(websiteSelectors.olx.advertisementDescription);
             const innerHTMLOfTimeElement = await page!.evaluate((element) => element.innerHTML, advertisementDescription);
             const foundPosition = findLocationOfFlatInDescription(advertisementTitle + ', ' + innerHTMLOfTimeElement);
 
