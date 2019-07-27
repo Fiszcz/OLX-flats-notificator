@@ -1,5 +1,5 @@
 import * as nodemailer from "nodemailer";
-const emailConfig =  require("../config/config.json");
+const emailConfig =  require("../../config/config.json");
 
 const transporter = nodemailer.createTransport({
     service: emailConfig.emailService,

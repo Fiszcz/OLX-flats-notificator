@@ -1,9 +1,9 @@
 import filterAsync from "node-filter-async";
 import puppeteer, {ElementHandle} from 'puppeteer';
 import delay from "delay";
-import { sendEmail } from "./emailService";
-import { findLocationOfFlatInDescription } from "./positionFinder";
-import { checkTransportTime, TransportInformation } from "./transportConnection";
+import { sendEmail } from "./email/emailService";
+import { findLocationOfFlatInDescription } from "./positionChecker/positionFinder";
+import { checkTransportTime, TransportInformation } from "./positionChecker/transportConnection";
 import { websiteSelectors } from "../config/websiteSelectors";
 
 const config =  require("../config/config.json");

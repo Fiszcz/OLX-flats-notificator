@@ -1,5 +1,5 @@
 import axios from 'axios';
-const config =  require("../config/config.json");
+const config =  require("../../config/config.json");
 
 const transportDestination = config.transportDestination.split(' ').join('+');
 
