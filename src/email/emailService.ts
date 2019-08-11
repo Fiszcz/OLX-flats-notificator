@@ -1,7 +1,7 @@
-import * as nodemailer from "nodemailer";
+import {createTransport} from "nodemailer";
 const emailConfig =  require("../../config/config.json");
 
-const transporter = nodemailer.createTransport({
+const emailTransporter = createTransport({
     service: emailConfig.emailService,
     auth: {
         user: emailConfig.emailAddress,
@@ -14,15 +14,11 @@ export const sendEmail = (pathToPicture: string, webAddress: string, title: stri
         from: emailConfig.emailAddress,
         to: emailConfig.emailsReceiver,
         subject: title,
-        attachments: [{
-            filename: pathToPicture,
-            path: pathToPicture,
-            cid: 'screenshot'
-        }],
+        attachments: pathToPicture ? [{filename: pathToPicture, path: pathToPicture, cid: 'screenshot'}] : [],
         html: 'Website: ' + webAddress + '\n' + description + '\n' + '<img src="cid:screenshot">',
     };
 
-    transporter.sendMail(mailOptions, (error) => {
+    emailTransporter.sendMail(mailOptions, (error) => {
         if (error) {
             console.log(error);
         } else {

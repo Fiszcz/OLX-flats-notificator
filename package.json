@@ -4,8 +4,9 @@
   "author": "Filip Szcześniak - fiszczu@gmail.com",
   "private": true,
   "scripts": {
-    "watch-ts": "tsc -w src/main.ts",
-    "olx-notificator": "node dist/src/main.js",
+    "watch-ts": "tsc -w",
+    "build": "tsc",
+    "start": "node src/index.js",
     "test": "jest"
   },
   "dependencies": {

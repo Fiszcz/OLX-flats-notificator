@@ -1,10 +1,14 @@
-export const findLocationOfFlatInDescription = (text: string) => {
-    const isFinded = text.search(/obok metra|blisko stacji metra|dobry dojazd|przy samej stacji metra|w centrum Warszawy/gi);
-    if (isFinded !== -1) {
-        return 1;
-    }
+const upperCaseOrNumber = /[A-ZŻŹĆĄŚĘŁÓŃ0-9]/;
+const letterOrNumber = /[a-zżźćńółęąś0-9]/i;
 
-    const positionInText = text.search(/(ul|ulica|ulicy|os|osiedle|osiedlu|al|aleja|alei|plac|placu|pl|galeria|galerii)(\s|\.|"|„)/gi);
+const perfectLocalization = /obok metra|blisko stacji metra|dobry dojazd|przy samej stacji metra|w centrum Warszawy/gi;
+const specificLocalization = /(ul|ulica|ulicy|os|osiedle|osiedlu|al|aleja|alei|plac|placu|pl|galeria|galerii)(\s|\.|"|„)/gi;
+
+export const findLocationOfFlatInDescription = (text: string) => {
+    if (text.search(perfectLocalization) !== -1)
+        return 1;
+
+    const positionInText = text.search(specificLocalization);
     if (positionInText !== -1) {
         const slicedText = text.slice(positionInText);
         let parts = 0, space = false, endOfAddressText;
@@ -12,12 +16,12 @@ export const findLocationOfFlatInDescription = (text: string) => {
             if (slicedText[endOfAddressText] === ' '
                 || slicedText[endOfAddressText] === '.'
                 || slicedText[endOfAddressText] === '"'
-                || slicedText[endOfAddressText] === '„') {
+                || slicedText[endOfAddressText] === '„')
                 if (!space) {
                     parts++;
                     space = true;
                 }
-            } else if (space) {
+            else if (space) {
                 if (upperCaseOrNumber.test(slicedText[endOfAddressText]))
                     space = false;
                 else
@@ -30,6 +34,3 @@ export const findLocationOfFlatInDescription = (text: string) => {
     } else
         return -1;
 };
-
-const upperCaseOrNumber = new RegExp(/[A-ZŻŹĆĄŚĘŁÓŃ0-9]/);
-const letterOrNumber = new RegExp(/[a-zżźćńółęąś0-9]/i);

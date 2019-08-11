@@ -7,7 +7,7 @@
       "dom"
     ],
     "allowJs": true,
-    "sourceMap": true,
+    "inlineSourceMap": true,
     "rootDir": ".",
     "strict": true,
     "types": [
