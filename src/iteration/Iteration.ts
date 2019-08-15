@@ -12,7 +12,7 @@ enum TimeComparison {
 export class Iteration {
 
     private latestAdvertisementsFromPreviousIteration: string[] = [];
-    private previousIterationTime: Time = {hour: 0, minutes: 0};
+    private previousIterationTime: Time;
 
     private latestAdvertisementsInCurrentIteration: string[] = [];
     // TODO: napisac poprawke na daty
@@ -20,6 +20,7 @@ export class Iteration {
 
     constructor(time: Time) {
         this.currentIterationTime = time;
+        this.previousIterationTime = time;
     }
 
     public startNewIteration = () => {
@@ -48,7 +49,9 @@ export class Iteration {
         if (timesComparisonBetweenPreviousIterationAndAdvertisement === TimeComparison.FIRST_NEWER) {
             const timesComparisonBetweenCurrentIterationAndAdvertisement = this.compareTimes(advertisementTime, this.currentIterationTime);
             if (timesComparisonBetweenCurrentIterationAndAdvertisement === TimeComparison.THE_SAME)
-                this.latestAdvertisementsInCurrentIteration.push(advertisement);
+                if (this.latestAdvertisementsInCurrentIteration.findIndex((previousAdvertisement) => previousAdvertisement === advertisement) === -1)
+                    this.latestAdvertisementsInCurrentIteration.push(advertisement);
+                else return false;
             else if (timesComparisonBetweenCurrentIterationAndAdvertisement === TimeComparison.FIRST_NEWER) {
                 this.currentIterationTime = {...advertisementTime};
                 this.latestAdvertisementsInCurrentIteration = [advertisement];

@@ -10,15 +10,12 @@
     "inlineSourceMap": true,
     "rootDir": ".",
     "strict": true,
-    "types": [
-      "node",
-      "jest"
-    ],
     "esModuleInterop": true,
     "inlineSources": true,
     "resolveJsonModule": true
   },
   "include": [
-    "src/*"
+    "src/*",
+    "test/*"
   ]
 }

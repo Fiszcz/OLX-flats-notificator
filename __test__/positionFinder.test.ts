@@ -1,4 +1,4 @@
-import {findLocationOfFlatInDescription} from "../src/positionChecker/positionFinder";
+import { findLocationOfFlatInDescription, Location } from "../src/positionChecker/positionFinder";
 
 describe('positionFinder', () => {
     test('should return valid posted place in advertisements', () => {
@@ -20,6 +20,12 @@ describe('positionFinder', () => {
         expect(findLocationOfFlatInDescription(exampleAdvertisement)).toBe('ulicy Żeromskiego 1');
     });
 
+    test('should return string with location of flat which is placed at the end of some sentence', () => {
+        const exampleAdvertisement = 'Znajduje się na 6 p w 8 p budynku na zamkniętym, chronionym osiedlu Shiraz. W budynku na dole recepcja.';
+
+        expect(findLocationOfFlatInDescription(exampleAdvertisement)).toBe('osiedlu Shiraz');
+    });
+
     test('should return valid posted place in advertisement, ' +
         'where place is written without space between parts of place name', () => {
         const exampleAdvertisements = ['Do wynajęcia jasne, dwustronne i ciche mieszkanie przy ul.Hery 25.',
@@ -29,10 +35,10 @@ describe('positionFinder', () => {
         expect(findLocationOfFlatInDescription(exampleAdvertisements[1])).toBe('ul.Z.Krasińskiego');
     });
 
-    test('should return 1 for special names of nearness to metro', () => {
+    test('should return PERFECT_LOCATION for special names of good locations', () => {
         const exampleAdvertisement = 'Wynajmę 2 pokojowe mieszkanie zlokalizowane przy samej stacji metra - Służew';
 
-        expect(findLocationOfFlatInDescription(exampleAdvertisement)).toBe(1);
+        expect(findLocationOfFlatInDescription(exampleAdvertisement)).toBe(Location.PERFECT_LOCATION);
     });
 
     test('should return valid posted place in advertisement, where place contains ""', () => {
@@ -41,10 +47,10 @@ describe('positionFinder', () => {
        expect(findLocationOfFlatInDescription(exampleAdvertisement)).toBe('osiedle „Służew');
     });
 
-    test('should return -1 in case of text without proper name of place', () => {
+    test('should return NOT_FOUND in case of text without proper location in description', () => {
         const exampleAdvertisement = 'Mieszkanie po remoncie, usytuowane na 4 piętrze z windą. Wymagana kaucja w wysokości 1600 zł.' +
             ' Mieszkanie przeznaczone dla osób nie palących. ';
 
-        expect(findLocationOfFlatInDescription(exampleAdvertisement)).toBe(-1);
+        expect(findLocationOfFlatInDescription(exampleAdvertisement)).toBe(Location.NOT_FOUND);
     });
 });
