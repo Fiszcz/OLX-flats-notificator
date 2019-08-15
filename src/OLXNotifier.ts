@@ -1,12 +1,12 @@
 import { Browser, ElementHandle, Page } from 'puppeteer';
 import delay from "delay";
 import { sendEmail } from "./email/emailService";
-import { findLocationOfFlatInDescription } from "./positionChecker/positionFinder";
+import { findLocationOfFlatInDescription, Location } from "./positionChecker/positionFinder";
 import { checkTransportTime, TransportInformation } from "./positionChecker/transportConnection";
 import { websiteSelectors } from "../config/websiteSelectors";
 import { Advertisement } from "./advertisement/Advertisement";
 import { Iteration } from "./iteration/Iteration";
-import {filterUrl} from "../config/config.json";
+import { filterUrl } from "../config/config.json";
 
 export class OLXNotifier {
 
@@ -73,9 +73,9 @@ export class OLXNotifier {
         const foundPosition = findLocationOfFlatInDescription(advertisement.title + ', ' + advertisement.description);
         let emailDescription = '';
         let transportTimeInfo = '';
-        if (foundPosition === 1)
+        if (foundPosition === Location.PERFECT_LOCATION)
             transportTimeInfo = '[DOBRA POZYCJA] ';
-        else if (foundPosition !== -1) {
+        else if (foundPosition !== Location.NOT_FOUND) {
             const informationAboutTransport: TransportInformation | undefined = await checkTransportTime(foundPosition);
             if (informationAboutTransport)
                 if (informationAboutTransport.timeInSeconds < 2761) { // TODO: move to config as property to set, less than 45 min.

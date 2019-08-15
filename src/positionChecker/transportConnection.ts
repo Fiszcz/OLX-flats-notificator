@@ -1,5 +1,10 @@
 import axios from 'axios';
-import {transportDestination as transportDestinationJSON, departureTime as departureTimeJSON, GoogleMapsKey} from '../../config/config.json';
+import {
+    transportDestination as transportDestinationJSON,
+    departureTime as departureTimeJSON,
+    GoogleMapsKey
+} from '../../config/config.json';
+import DirectionsResult = google.maps.DirectionsResult;
 
 const transportDestination = transportDestinationJSON.split(' ').join('+');
 
@@ -18,7 +23,7 @@ export interface TransportInformation {
 
 export const checkTransportTime = async (placeDescription: string): Promise<TransportInformation | undefined> => {
 
-    const informationAboutTransport = await axios.get('https://maps.googleapis.com/maps/api/directions/json' +
+    return axios.get<DirectionsResult>('https://maps.googleapis.com/maps/api/directions/json' +
         // TODO: move Warszawa to config property
         '?origin=' + placeDescription.split(' ').join('+') + '+Warszawa' +
         '&destination=' + transportDestination +
@@ -26,16 +31,18 @@ export const checkTransportTime = async (placeDescription: string): Promise<Tran
         '&mode=transit' +
         '&departure_time=' + departureTimeInSeconds +
         '&key=' + GoogleMapsKey)
-        .then((resp: any) => resp.data.routes[0].legs[0]);
-
-    if (Boolean(informationAboutTransport)) {
-        console.log('[Google Maps]' + informationAboutTransport.duration.text + ' to ' + placeDescription);
-        return {
-            transportSteps: informationAboutTransport.steps,
-            textTime: informationAboutTransport.duration.text,
-            timeInSeconds: informationAboutTransport.duration.value,
-        };
-    }
-    return undefined;
+        .then((resp) => resp.data.routes[0].legs[0])
+        .then((informationAboutTransport) => {
+            if (Boolean(informationAboutTransport)) {
+                console.log('[Google Maps]' + informationAboutTransport.duration.text + ' to ' + placeDescription);
+                return {
+                    transportSteps: informationAboutTransport.steps,
+                    textTime: informationAboutTransport.duration.text,
+                    timeInSeconds: informationAboutTransport.duration.value,
+                };
+            }
+        })
+        // TODO: handle error
+        .catch(() => undefined);
 
 };
