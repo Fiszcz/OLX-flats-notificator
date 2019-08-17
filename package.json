@@ -10,11 +10,14 @@
     "test": "jest"
   },
   "dependencies": {
+    "@types/googlemaps": "^3.37.3",
+    "@types/inquirer": "^6.5.0",
     "@types/node": "^11.9.6",
     "@types/nodemailer": "^4.6.6",
     "@types/puppeteer": "^1.12.1",
     "axios": "^0.18.0",
     "delay": "^4.1.0",
+    "inquirer": "^6.5.1",
     "node-filter-async": "^1.1.1",
     "nodemailer": "^5.1.1",
     "puppeteer": "^1.12.2",
@@ -23,6 +26,6 @@
   "devDependencies": {
     "@types/jest": "^24.0.9",
     "jest": "^24.1.0",
-    "ts-jest": "^24.0.0"
+    "ts-jest": "^24.0.2"
   }
 }

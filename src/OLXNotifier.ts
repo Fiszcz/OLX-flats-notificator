@@ -1,6 +1,6 @@
 import { Browser, ElementHandle, Page } from 'puppeteer';
 import delay from "delay";
-import { sendEmail } from "./email/emailService";
+import { EmailService } from "./email/emailService";
 import { findLocationOfFlatInDescription, Location } from "./positionChecker/positionFinder";
 import { checkTransportTime, TransportInformation } from "./positionChecker/transportConnection";
 import { websiteSelectors } from "../config/websiteSelectors";
@@ -8,19 +8,25 @@ import { Advertisement } from "./advertisement/Advertisement";
 import { Iteration } from "./iteration/Iteration";
 import { filterUrl } from "../config/config.json";
 
+const appConfig =  require("../../config/config.json");
+
 export class OLXNotifier {
 
     private readonly browser: Browser;
+    private readonly emailService: EmailService;
     private advertisementsPage: Page;
     private iterations: Iteration;
 
-    constructor(browser: Browser, advertisementsPage: Page, iteration: Iteration) {
+    constructor(emailService: EmailService, browser: Browser, advertisementsPage: Page, iteration: Iteration) {
+        this.emailService = emailService;
         this.browser = browser;
         this.advertisementsPage = advertisementsPage;
         this.iterations = iteration;
     }
     
     static build = async (browser: Browser) => {
+        const emailService = await EmailService.build(appConfig);
+
         const advertisementsPage = await browser.newPage();
         await advertisementsPage.goto(filterUrl, {waitUntil: 'domcontentloaded'});
 
@@ -31,7 +37,7 @@ export class OLXNotifier {
             // TODO: fix representation of time
             advertisement.time.minutes++;
             const previousIterationTime = new Iteration(advertisement.time);
-            return new OLXNotifier(browser, advertisementsPage, previousIterationTime);
+            return new OLXNotifier(emailService, browser, advertisementsPage, previousIterationTime);
         }
         return undefined;
     };
@@ -88,7 +94,7 @@ export class OLXNotifier {
 
         const screenshotPath = await advertisement.takeScreenshot();
 
-        sendEmail(screenshotPath || '', advertisement.href, transportTimeInfo + advertisement.title, emailDescription);
+        this.emailService.sendEmail(screenshotPath || '', advertisement.href, transportTimeInfo + advertisement.title, emailDescription);
 
         await advertisement.closeAdvertisement();
     };
