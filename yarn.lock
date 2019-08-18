@@ -325,12 +325,12 @@
   dependencies:
     "@babel/types" "^7.3.0"
 
-"@types/googlemaps@^3.37.3":
+"@types/googlemaps@3.37.3":
   version "3.37.3"
   resolved "https://registry.yarnpkg.com/@types/googlemaps/-/googlemaps-3.37.3.tgz#ad7a49c594512fad13e05237d2849afb11872c57"
   integrity sha512-4J1fYJhLnzsfZgeAgrzBfNHFVoZHcWp/rK7oImeV7ZhplL19T1kxCoA4xJTuPfS+sKiN06E+xTvj2K13L7Wc1g==
 
-"@types/inquirer@^6.5.0":
+"@types/inquirer@6.5.0":
   version "6.5.0"
   resolved "https://registry.yarnpkg.com/@types/inquirer/-/inquirer-6.5.0.tgz#b83b0bf30b88b8be7246d40e51d32fe9d10e09be"
   integrity sha512-rjaYQ9b9y/VFGOpqBEXRavc3jh0a+e6evAbI31tMda8VlPaSy0AZJfXsvmIe3wklc7W6C3zCSfleuMXR7NOyXw==
@@ -370,19 +370,19 @@
   dependencies:
     "@types/jest-diff" "*"
 
-"@types/node@*", "@types/node@^11.9.6":
+"@types/node@*", "@types/node@11.9.6":
   version "11.9.6"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-11.9.6.tgz#c632bbcc780a1349673a6e2e9b9dfa8c369d3c74"
   integrity sha512-4hS2K4gwo9/aXIcoYxCtHpdgd8XUeDmo1siRCAH3RziXB65JlPqUFMtfy9VPj+og7dp3w1TFjGwYga4e0m9GwA==
 
-"@types/nodemailer@^4.6.6":
+"@types/nodemailer@4.6.6":
   version "4.6.6"
   resolved "https://registry.yarnpkg.com/@types/nodemailer/-/nodemailer-4.6.6.tgz#2ce2bde5dd5bb4546e11390e1babd80ba35e2154"
   integrity sha512-N2czhXs7fbQhvoquEGzmHAWttnxLfrM3+cWMRFX4hTQq4GE3VyaSE3MOOse4VoNgvtti/H5ow/Hq9KXu/UMWqA==
   dependencies:
     "@types/node" "*"
 
-"@types/puppeteer@^1.12.1":
+"@types/puppeteer@1.12.1":
   version "1.12.1"
   resolved "https://registry.yarnpkg.com/@types/puppeteer/-/puppeteer-1.12.1.tgz#f61f9e0da45e36cdbbeab3b088995a8a2cad47a4"
   integrity sha512-6qpe7XXM93iWh8quEP8Ay516Vmfc2r+ZAxFH3Mt6fx3vzmZz+4Q+hYxc9PxeEIXJhWLAAPYAgAiM/vLHEUwGpw==
@@ -3685,10 +3685,10 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typescript@^3.3.3333:
-  version "3.3.3333"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.3.3333.tgz#171b2c5af66c59e9431199117a3bcadc66fdcfd6"
-  integrity sha512-JjSKsAfuHBE/fB2oZ8NxtRTk5iGcg6hkYXMnZ3Wc+b2RSqejEqTaem11mHASMnFilHrax3sLK0GDzcJrekZYLw==
+typescript@3.4.5:
+  version "3.4.5"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.4.5.tgz#2d2618d10bb566572b8d7aad5180d84257d70a99"
+  integrity sha512-YycBxUb49UUhdNMU5aJ7z5Ej2XGmaIBL0x34vZ82fn3hGvD+bgrMrVDpatgz2f7YxUMJxMkbWxJZeAvDxVe7Vw==
 
 uglify-js@^3.1.4:
   version "3.4.9"
