@@ -1,6 +1,5 @@
 {
   "emailAddress": "",
-  "emailPassword": "",
   "emailService": "gmail",
   "emailsReceiver": "",
   "GoogleMapsKey": "",
@@ -11,6 +10,7 @@
     "hour": 9,
     "minute": 0
   },
+  "maxTransportTime": 30,
   "filterUrl": "",
-  "checkInterval": 3600000
+  "checkInterval": 30
 }

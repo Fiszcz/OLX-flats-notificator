@@ -84,7 +84,7 @@ export class OLXNotifier {
         else if (foundPosition !== Location.NOT_FOUND) {
             const informationAboutTransport: TransportInformation | undefined = await checkTransportTime(foundPosition);
             if (informationAboutTransport)
-                if (informationAboutTransport.timeInSeconds < 2761) { // TODO: move to config as property to set, less than 45 min.
+                if (informationAboutTransport.timeInSeconds < appConfig * 60) {
                     transportTimeInfo = '[' + informationAboutTransport.textTime + '] ';
                     emailDescription = ' Location: ' + foundPosition + '\n' + informationAboutTransport.transportSteps.map((step) => step.html_instructions);
                 } else
