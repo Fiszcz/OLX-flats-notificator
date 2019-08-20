@@ -61,14 +61,12 @@ export class OLXNotifier {
         const otherAdvertisementsTable = await this.advertisementsPage.$$(websiteSelectors.tableOffers);
         const advertisementElements: ElementHandle[] = await otherAdvertisementsTable[1].$$(websiteSelectors.advertisements);
         const advertisements = advertisementElements.map(async (advertisementElement) => {
-            const advertisement = await Advertisement.build(advertisementElement);
-            return advertisement;
+            return Advertisement.build(advertisementElement);
         });
-        const theLatestAdvertisements = await Promise.all(advertisements).then((advertisements) => {
-             return advertisements.filter((advertisement) => advertisement && this.iterations.isNewerThanPreviousIteration(advertisement.time, advertisement.title));
+        
+        return await Promise.all(advertisements).then((advertisements) => {
+            return advertisements.filter((advertisement) => advertisement && this.iterations.isNewerThanPreviousIteration(advertisement.time, advertisement.title));
         }) as Advertisement[];
-
-        return theLatestAdvertisements;
     };
 
     private examineAdvertisement = async (advertisement: Advertisement) => {
@@ -80,7 +78,7 @@ export class OLXNotifier {
         let emailDescription = '';
         let transportTimeInfo = '';
         if (foundPosition === Location.PERFECT_LOCATION)
-            transportTimeInfo = '[DOBRA POZYCJA] ';
+            transportTimeInfo = '[GOOD LOCATION] ';
         else if (foundPosition !== Location.NOT_FOUND) {
             const informationAboutTransport: TransportInformation | undefined = await checkTransportTime(foundPosition);
             if (informationAboutTransport)
