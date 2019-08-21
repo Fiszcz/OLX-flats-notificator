@@ -11,6 +11,6 @@
     "minute": 0
   },
   "maxTransportTime": 30,
-  "filterUrl": "",
+  "filterUrls": [""],
   "checkInterval": 30
 }

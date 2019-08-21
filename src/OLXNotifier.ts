@@ -6,25 +6,26 @@ import { checkTransportTime, TransportInformation } from "./positionChecker/tran
 import { websiteSelectors } from "../config/websiteSelectors";
 import { Advertisement } from "./advertisement/Advertisement";
 import { Iteration } from "./iteration/Iteration";
-import { filterUrl } from "../config/config.json";
 
-const appConfig =  require("../../config/config.json");
+const appConfig =  require("../config/config.json");
 
 export class OLXNotifier {
 
     private readonly browser: Browser;
     private readonly emailService: EmailService;
+    private readonly filterUrl: string;
     private advertisementsPage: Page;
     private iterations: Iteration;
 
-    constructor(emailService: EmailService, browser: Browser, advertisementsPage: Page, iteration: Iteration) {
+    constructor(emailService: EmailService, browser: Browser, advertisementsPage: Page, iteration: Iteration, filterUrl: string) {
         this.emailService = emailService;
         this.browser = browser;
         this.advertisementsPage = advertisementsPage;
         this.iterations = iteration;
+        this.filterUrl = filterUrl;
     }
     
-    static build = async (browser: Browser) => {
+    static build = async (browser: Browser, filterUrl: string) => {
         const emailService = await EmailService.build(appConfig);
 
         const advertisementsPage = await browser.newPage();
@@ -37,7 +38,7 @@ export class OLXNotifier {
             // TODO: fix representation of time
             advertisement.time.minutes++;
             const previousIterationTime = new Iteration(advertisement.time);
-            return new OLXNotifier(emailService, browser, advertisementsPage, previousIterationTime);
+            return new OLXNotifier(emailService, browser, advertisementsPage, previousIterationTime, filterUrl);
         }
         return undefined;
     };
@@ -55,7 +56,7 @@ export class OLXNotifier {
     private getTheLatestAdvertisements = async (): Promise<Advertisement[]> => {
         this.iterations.startNewIteration();
 
-        await this.advertisementsPage.goto(filterUrl, {waitUntil: 'domcontentloaded'});
+        await this.advertisementsPage.goto(this.filterUrl, {waitUntil: 'domcontentloaded'});
         await this.advertisementsPage.click(websiteSelectors.closeCookie);
 
         const otherAdvertisementsTable = await this.advertisementsPage.$$(websiteSelectors.tableOffers);
@@ -63,7 +64,7 @@ export class OLXNotifier {
         const advertisements = advertisementElements.map(async (advertisementElement) => {
             return Advertisement.build(advertisementElement);
         });
-        
+
         return await Promise.all(advertisements).then((advertisements) => {
             return advertisements.filter((advertisement) => advertisement && this.iterations.isNewerThanPreviousIteration(advertisement.time, advertisement.title));
         }) as Advertisement[];
@@ -82,7 +83,7 @@ export class OLXNotifier {
         else if (foundPosition !== Location.NOT_FOUND) {
             const informationAboutTransport: TransportInformation | undefined = await checkTransportTime(foundPosition);
             if (informationAboutTransport)
-                if (informationAboutTransport.timeInSeconds < appConfig * 60) {
+                if (informationAboutTransport.timeInSeconds < appConfig.maxTransportTime * 60) {
                     transportTimeInfo = '[' + informationAboutTransport.textTime + '] ';
                     emailDescription = ' Location: ' + foundPosition + '\n' + informationAboutTransport.transportSteps.map((step) => step.html_instructions);
                 } else
