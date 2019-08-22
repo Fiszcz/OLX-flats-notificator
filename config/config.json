@@ -12,5 +12,6 @@
   },
   "maxTransportTime": 30,
   "filterUrls": [""],
-  "checkInterval": 30
+  "checkInterval": 30,
+  "composeIteration": false
 }

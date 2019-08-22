@@ -51,6 +51,7 @@ export class OLXNotifier {
             // artificial retarder to avoid detection by the OLX service
             await delay(1000);
         }
+        this.emailService.sendEmails();
     };
 
     private getTheLatestAdvertisements = async (): Promise<Advertisement[]> => {
@@ -93,7 +94,7 @@ export class OLXNotifier {
 
         const screenshotPath = await advertisement.takeScreenshot();
 
-        this.emailService.sendEmail(screenshotPath || '', advertisement.href, transportTimeInfo + advertisement.title, emailDescription);
+        this.emailService.prepareEmail(screenshotPath || '', advertisement.href, transportTimeInfo + advertisement.title, emailDescription);
 
         await advertisement.closeAdvertisement();
     };
