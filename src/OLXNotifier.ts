@@ -1,4 +1,4 @@
-import { Browser, ElementHandle, Page } from 'puppeteer';
+import { Browser, Page } from 'puppeteer';
 import delay from "delay";
 import { EmailService } from "./email/emailService";
 import { findLocationOfFlatInDescription, Location } from "./positionChecker/positionFinder";
@@ -47,7 +47,7 @@ export class OLXNotifier {
     public examineAdvertisements = async () => {
         const theLatestAdvertisements: Advertisement[] = await this.getTheLatestAdvertisements();
         for (const advertisement of theLatestAdvertisements) {
-            this.examineAdvertisement(advertisement);
+            await this.examineAdvertisement(advertisement);
 
             // artificial retarder to avoid detection by the OLX service
             await delay(1000);
@@ -76,19 +76,20 @@ export class OLXNotifier {
 
         await advertisement.openAdvertisement(this.browser);
 
-        const foundPosition = findLocationOfFlatInDescription(advertisement.title + ', ' + advertisement.description);
+        const foundLocation = findLocationOfFlatInDescription(advertisement.title + ', ' + advertisement.description);
         let emailDescription = '';
         let transportTimeInfo = '';
-        if (foundPosition === Location.PERFECT_LOCATION)
+        if (foundLocation === Location.PERFECT_LOCATION)
             transportTimeInfo = '[GOOD LOCATION] ';
-        else if (foundPosition !== Location.NOT_FOUND) {
-            const informationAboutTransport: TransportInformation | undefined = await checkTransportTime(foundPosition);
-            if (informationAboutTransport)
+        else if (foundLocation !== Location.NOT_FOUND) {
+            const informationAboutTransport: TransportInformation | undefined = await checkTransportTime(foundLocation);
+            if (informationAboutTransport) {
                 if (informationAboutTransport.timeInSeconds < appConfig.maxTransportTime * 60) {
                     transportTimeInfo = '[' + informationAboutTransport.textTime + '] ';
-                    emailDescription = ' Location: ' + foundPosition + '\n' + informationAboutTransport.transportSteps.map((step) => step.html_instructions);
+                    emailDescription = ' Location: ' + foundLocation + '\n' + informationAboutTransport.transportSteps.map((step) => step.html_instructions);
                 } else
                     return;
+            }
         }
         // TODO: should we send advertisement, which has not found localization ?
 
