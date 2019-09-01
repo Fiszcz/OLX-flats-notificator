@@ -31,14 +31,15 @@ export class OLXNotifier {
         const advertisementsPage = await browser.newPage();
         await advertisementsPage.goto(filterUrl, {waitUntil: 'domcontentloaded'});
 
-        const advertisementsTable = await advertisementsPage.$$(websiteSelectors.tableOffers);
-        const theLatestAdvertisement: ElementHandle = (await advertisementsTable[1].$$(websiteSelectors.advertisements))[0];
-        const advertisement = await Advertisement.build(theLatestAdvertisement);
-        if (advertisement) {
-            // TODO: fix representation of time
-            advertisement.time.minutes++;
-            const previousIterationTime = new Iteration(advertisement.time);
-            return new OLXNotifier(emailService, browser, advertisementsPage, previousIterationTime, filterUrl);
+        const advertisementsTable = await advertisementsPage.$(websiteSelectors.tableOffers);
+        if (advertisementsTable) {
+            const advertisement = await Advertisement.build(advertisementsTable);
+            if (advertisement) {
+                // TODO: fix representation of time
+                advertisement.time.minutes++;
+                const previousIterationTime = new Iteration(advertisement.time);
+                return new OLXNotifier(emailService, browser, advertisementsPage, previousIterationTime, filterUrl);
+            }
         }
         return undefined;
     };
@@ -60,9 +61,8 @@ export class OLXNotifier {
         await this.advertisementsPage.goto(this.filterUrl, {waitUntil: 'domcontentloaded'});
         await this.advertisementsPage.click(websiteSelectors.closeCookie);
 
-        const otherAdvertisementsTable = await this.advertisementsPage.$$(websiteSelectors.tableOffers);
-        const advertisementElements: ElementHandle[] = await otherAdvertisementsTable[1].$$(websiteSelectors.advertisements);
-        const advertisements = advertisementElements.map(async (advertisementElement) => {
+        const advertisementsTable = await this.advertisementsPage.$$(websiteSelectors.tableOffers);
+        const advertisements = advertisementsTable.map((advertisementElement) => {
             return Advertisement.build(advertisementElement);
         });
 
