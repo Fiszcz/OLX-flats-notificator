@@ -14,6 +14,7 @@ export interface Config {
     emailsReceiver: string;
     composeIteration?: boolean;
     maxTransportTime: number;
+    sendWorseAdvertisements?: boolean;
 }
 
 export class OLXNotifier {
@@ -22,20 +23,23 @@ export class OLXNotifier {
     private readonly emailService: EmailService;
     private readonly filterUrl: string;
     private readonly maxTransportTime: number;
+    private readonly emailServiceForWorseAdvertisements?: EmailService;
     private advertisementsPage: Page;
     private iterations: Iteration;
 
-    constructor(emailService: EmailService, browser: Browser, advertisementsPage: Page, iteration: Iteration, filterUrl: string, maxTransportTime: number) {
+    constructor(emailService: EmailService, browser: Browser, advertisementsPage: Page, iteration: Iteration, filterUrl: string, maxTransportTime: number, emailServiceForWorseAdvertisements?: EmailService) {
         this.emailService = emailService;
         this.browser = browser;
         this.advertisementsPage = advertisementsPage;
         this.iterations = iteration;
         this.filterUrl = filterUrl;
         this.maxTransportTime = maxTransportTime;
+        this.emailServiceForWorseAdvertisements = emailServiceForWorseAdvertisements;
     }
     
     static build = async (browser: Browser, filterUrl: string, appConfig: Config) => {
         const emailService = new EmailService(appConfig);
+        const emailServiceForWorseAdvertisements = appConfig.sendWorseAdvertisements ? new EmailService(appConfig) : undefined;
 
         const advertisementsPage = await browser.newPage();
         await advertisementsPage.goto(filterUrl, {waitUntil: 'domcontentloaded'});
@@ -47,7 +51,7 @@ export class OLXNotifier {
                 // TODO: fix representation of time
                 advertisement.time.minutes++;
                 const previousIterationTime = new Iteration(advertisement.time);
-                return new OLXNotifier(emailService, browser, advertisementsPage, previousIterationTime, filterUrl, appConfig.maxTransportTime);
+                return new OLXNotifier(emailService, browser, advertisementsPage, previousIterationTime, filterUrl, appConfig.maxTransportTime, emailServiceForWorseAdvertisements);
             }
         }
         return undefined;
@@ -63,6 +67,8 @@ export class OLXNotifier {
             await delay(1000);
         }
         this.emailService.sendEmails();
+        if (this.emailServiceForWorseAdvertisements)
+            this.emailServiceForWorseAdvertisements.sendEmails('[WORSE]');
     };
 
     private getTheLatestAdvertisements = async (): Promise<Advertisement[]> => {
@@ -89,23 +95,28 @@ export class OLXNotifier {
         const foundLocation = findLocationOfFlatInDescription(advertisement.title + ', ' + advertisement.description);
         let emailDescription = '';
         let transportTimeInfo = '';
+        let isWorseAdvertisement = false;
         if (foundLocation === Location.PERFECT_LOCATION)
             transportTimeInfo = '[GOOD LOCATION] ';
         else if (foundLocation !== Location.NOT_FOUND) {
             const informationAboutTransport: TransportInformation | undefined = await checkTransportTime(foundLocation);
             if (informationAboutTransport) {
-                if (informationAboutTransport.timeInSeconds < this.maxTransportTime * 60) {
-                    transportTimeInfo = '[' + informationAboutTransport.textTime + '] ';
-                    emailDescription = ' Location: ' + foundLocation + '\n' + informationAboutTransport.transportSteps.map((step) => step.html_instructions);
-                } else
-                    return;
+                transportTimeInfo = '[' + informationAboutTransport.textTime + '] ';
+                emailDescription = ' Location: ' + foundLocation + '\n' + informationAboutTransport.transportSteps.map((step) => step.html_instructions);
+                if (informationAboutTransport.timeInSeconds > this.maxTransportTime * 60) {
+                    if (this.emailServiceForWorseAdvertisements)
+                        isWorseAdvertisement = true;
+                    else
+                        return;
+                }
             }
         }
         // TODO: should we send advertisement, which has not found location ?
 
         const screenshotPath = await advertisement.takeScreenshot();
 
-        this.emailService.prepareEmail(screenshotPath || '', advertisement.href, transportTimeInfo + advertisement.title, emailDescription);
+        (isWorseAdvertisement ? this.emailServiceForWorseAdvertisements! : this.emailService)
+            .prepareEmail(screenshotPath || '', advertisement.href, transportTimeInfo + advertisement.title, emailDescription);
     };
 
 }

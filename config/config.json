@@ -13,5 +13,6 @@
   "maxTransportTime": 30,
   "filterUrls": [""],
   "checkInterval": 30,
-  "composeIteration": false
+  "composeIteration": false,
+  "sendWorseAdvertisements": false
 }

@@ -8,6 +8,7 @@ appConfig.filterUrls = ['olx.pl/filter/123'];
 
 jest.mock('inquirer');
 jest.mock('../src/OLXNotifier');
+jest.mock('puppeteer');
 
 describe('index', () => {
 

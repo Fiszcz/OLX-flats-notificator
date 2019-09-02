@@ -32,9 +32,9 @@ export class EmailService {
         this.waitingAdvertisementsToSend.push({pathToScreenshot, webAddress, title, description});
     };
 
-    public sendEmails = () => {
+    public sendEmails = (emailPrefixTitle?: string) => {
         if (this.composeMail) {
-            this.sendComposedEmail();
+            this.sendComposedEmail(emailPrefixTitle || '');
         } else {
             this.sendSeparatedEmails();
         }
@@ -66,11 +66,11 @@ export class EmailService {
         }
     };
 
-    private sendComposedEmail = () => {
+    private sendComposedEmail = (emailPrefixTitle: string) => {
         const email: Mail.Options = {
             to: this.emailReceiver,
             // TODO: add url of filter url
-            subject: this.waitingAdvertisementsToSend.length + ' advertisements',
+            subject: emailPrefixTitle + this.waitingAdvertisementsToSend.length + ' advertisements',
             attachments: [],
             html: '',
         };
