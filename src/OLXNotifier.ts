@@ -7,26 +7,35 @@ import { websiteSelectors } from "../config/websiteSelectors";
 import { Advertisement } from "./advertisement/Advertisement";
 import { Iteration } from "./iteration/Iteration";
 
-const appConfig =  require("../config/config.json");
+export interface Config {
+    emailService: string;
+    emailAddress: string;
+    emailPassword?: string;
+    emailsReceiver: string;
+    composeIteration?: boolean;
+    maxTransportTime: number;
+}
 
 export class OLXNotifier {
 
     private readonly browser: Browser;
     private readonly emailService: EmailService;
     private readonly filterUrl: string;
+    private readonly maxTransportTime: number;
     private advertisementsPage: Page;
     private iterations: Iteration;
 
-    constructor(emailService: EmailService, browser: Browser, advertisementsPage: Page, iteration: Iteration, filterUrl: string) {
+    constructor(emailService: EmailService, browser: Browser, advertisementsPage: Page, iteration: Iteration, filterUrl: string, maxTransportTime: number) {
         this.emailService = emailService;
         this.browser = browser;
         this.advertisementsPage = advertisementsPage;
         this.iterations = iteration;
         this.filterUrl = filterUrl;
+        this.maxTransportTime = maxTransportTime;
     }
     
-    static build = async (browser: Browser, filterUrl: string) => {
-        const emailService = await EmailService.build(appConfig);
+    static build = async (browser: Browser, filterUrl: string, appConfig: Config) => {
+        const emailService = new EmailService(appConfig);
 
         const advertisementsPage = await browser.newPage();
         await advertisementsPage.goto(filterUrl, {waitUntil: 'domcontentloaded'});
@@ -38,7 +47,7 @@ export class OLXNotifier {
                 // TODO: fix representation of time
                 advertisement.time.minutes++;
                 const previousIterationTime = new Iteration(advertisement.time);
-                return new OLXNotifier(emailService, browser, advertisementsPage, previousIterationTime, filterUrl);
+                return new OLXNotifier(emailService, browser, advertisementsPage, previousIterationTime, filterUrl, appConfig.maxTransportTime);
             }
         }
         return undefined;
@@ -48,6 +57,7 @@ export class OLXNotifier {
         const theLatestAdvertisements: Advertisement[] = await this.getTheLatestAdvertisements();
         for (const advertisement of theLatestAdvertisements) {
             await this.examineAdvertisement(advertisement);
+            await advertisement.closeAdvertisement();
 
             // artificial retarder to avoid detection by the OLX service
             await delay(1000);
@@ -84,20 +94,18 @@ export class OLXNotifier {
         else if (foundLocation !== Location.NOT_FOUND) {
             const informationAboutTransport: TransportInformation | undefined = await checkTransportTime(foundLocation);
             if (informationAboutTransport) {
-                if (informationAboutTransport.timeInSeconds < appConfig.maxTransportTime * 60) {
+                if (informationAboutTransport.timeInSeconds < this.maxTransportTime * 60) {
                     transportTimeInfo = '[' + informationAboutTransport.textTime + '] ';
                     emailDescription = ' Location: ' + foundLocation + '\n' + informationAboutTransport.transportSteps.map((step) => step.html_instructions);
                 } else
                     return;
             }
         }
-        // TODO: should we send advertisement, which has not found localization ?
+        // TODO: should we send advertisement, which has not found location ?
 
         const screenshotPath = await advertisement.takeScreenshot();
 
         this.emailService.prepareEmail(screenshotPath || '', advertisement.href, transportTimeInfo + advertisement.title, emailDescription);
-
-        await advertisement.closeAdvertisement();
     };
 
 }

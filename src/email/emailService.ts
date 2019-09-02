@@ -1,14 +1,6 @@
-import inquirer from "inquirer";
 import { createTransport } from "nodemailer";
+import { Config } from "../OLXNotifier";
 import Mail = require("nodemailer/lib/mailer");
-
-interface Config {
-    emailService: string;
-    emailAddress: string;
-    emailPassword?: string;
-    emailsReceiver: string;
-    composeIteration?: boolean;
-}
 
 interface SendingAdvertisementData {
     pathToScreenshot: string;
@@ -35,17 +27,6 @@ export class EmailService {
         this.emailReceiver = emailConfig.emailsReceiver;
         this.composeMail = emailConfig.composeIteration || false;
     }
-
-    static build = async (config: Config) => {
-        while (Boolean(config.emailPassword) === false) {
-            config.emailPassword = await inquirer.prompt({
-                type: 'password',
-                name: 'emailPassword',
-                message: 'Enter your email password: ',
-            }).then((answer) => answer.emailPassword);
-        }
-        return new EmailService(config);
-    };
 
     public prepareEmail = (pathToScreenshot: string, webAddress: string, title: string, description: string) => {
         this.waitingAdvertisementsToSend.push({pathToScreenshot, webAddress, title, description});
@@ -108,4 +89,5 @@ export class EmailService {
         if (email.html)
             this.sendEmail(email);
     };
+
 }

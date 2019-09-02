@@ -1,4 +1,4 @@
-import { OLXNotifier } from "../src/OLXNotifier";
+import { Config, OLXNotifier } from "../src/OLXNotifier";
 import { Browser } from "puppeteer";
 import { Advertisement } from "../src/advertisement/Advertisement";
 import { mocked } from "ts-jest/utils";
@@ -59,10 +59,6 @@ describe('OLXNotifier', () => {
             }),
         };
 
-        beforeAll(() => {
-            EmailService.build = jest.fn();
-        });
-
         beforeEach(() => {
             mockPage.$.mockReturnValue(true);
         });
@@ -72,19 +68,19 @@ describe('OLXNotifier', () => {
                 time: {minutes: 30, hour: 1}
             });
 
-            expect(await OLXNotifier.build(browser, '')).toBeInstanceOf(OLXNotifier);
+            expect(await OLXNotifier.build(browser, '', {} as Config)).toBeInstanceOf(OLXNotifier);
         });
 
         test('return undefined if cannot find advertisements table', async () => {
             mockPage.$.mockReturnValue(null);
 
-            expect(await OLXNotifier.build(browser, '')).toBeUndefined();
+            expect(await OLXNotifier.build(browser, '', {} as Config)).toBeUndefined();
         });
 
         test('return undefined if cannot create Advertisement object', async () => {
             Advertisement.build = jest.fn().mockResolvedValue(undefined);
 
-            expect(await OLXNotifier.build(browser, '')).toBeUndefined();
+            expect(await OLXNotifier.build(browser, '', {} as Config)).toBeUndefined();
         });
 
     });
@@ -103,7 +99,7 @@ describe('OLXNotifier', () => {
                 click: () => {},
             };
             const iteration = new Iteration({hour: 10, minutes: 0});
-            olxNotifier = new OLXNotifier(new EmailService({} as any), {} as Browser, advertisementsPage as any, iteration, '');
+            olxNotifier = new OLXNotifier(new EmailService({} as any), {} as Browser, advertisementsPage as any, iteration, '', 10);
         });
 
         test('should make email for advertisement with perfect location', async () => {

@@ -1,16 +1,28 @@
 import puppeteer from 'puppeteer';
 import { OLXNotifier } from "./OLXNotifier";
-import {checkInterval, filterUrls} from "../config/config.json";
+import inquirer from "inquirer";
 
-(async () => {
+const appConfig =  require("../config/config.json");
+
+export const index  = async () => {
     const browser = await puppeteer.launch();
 
-    for (const filterUrl in filterUrls) {
-        const olxNotifier = await OLXNotifier.build(browser, filterUrl);
+    while (Boolean(appConfig.emailPassword) === false) {
+        appConfig.emailPassword = await inquirer.prompt({
+            type: 'password',
+            name: 'emailPassword',
+            message: 'Enter your email password: ',
+        }).then((answer) => answer.emailPassword);
+    }
+
+    for (const filterUrl of appConfig.filterUrls) {
+        const olxNotifier = await OLXNotifier.build(browser, filterUrl, appConfig);
         if (olxNotifier === undefined) {
             console.error('Cannot run');
             return -1;
         }
-        setInterval(olxNotifier.examineAdvertisements, checkInterval * 60000);
+        setInterval(olxNotifier.examineAdvertisements, appConfig.checkInterval * 60000);
     }
-})();
+};
+
+index();
