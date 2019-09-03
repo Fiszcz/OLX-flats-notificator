@@ -13,4 +13,6 @@ module.exports = {
         "node",
     ],
     "preset": 'ts-jest',
+    "coverageDirectory": "./coverage/",
+    "collectCoverage": true
 };
