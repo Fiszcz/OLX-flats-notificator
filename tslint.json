@@ -6,22 +6,15 @@
         "array-type": [true, "array"],
         "boolean-trivia": true,
         "class-name": true,
-        "comment-format": [true,
-            "check-space"
-        ],
-        "curly":[false],
+        "comment-format": [true, "check-space"],
+        "curly": [false],
         "debug-assert": true,
-        "indent": [true,
-            "spaces"
-        ],
+        "indent": [true, "spaces"],
         "interface-name": [true, "never-prefix"],
         "interface-over-type-literal": true,
         "jsdoc-format": true,
         "linebreak-style": [true, "CRLF"],
-        "next-line": [true,
-            "check-catch",
-            "check-else"
-        ],
+        "next-line": [true, "check-catch", "check-else"],
         "no-bom": true,
         "no-double-space": true,
         "no-in-operator": true,
@@ -36,10 +29,7 @@
         "no-var-keyword": true,
         "object-literal-shorthand": true,
         "object-literal-surrounding-space": true,
-        "one-line": [true,
-            "check-open-brace",
-            "check-whitespace"
-        ],
+        "one-line": [true, "check-open-brace", "check-whitespace"],
         "prefer-const": true,
         "quotemark": false,
         "semicolon": [true, "always", "ignore-bound-class-methods"],
@@ -63,13 +53,7 @@
                 "variable-declaration": "onespace"
             }
         ],
-        "whitespace": [true,
-            "check-branch",
-            "check-decl",
-            "check-operator",
-            "check-separator",
-            "check-type"
-        ],
+        "whitespace": [true, "check-branch", "check-decl", "check-operator", "check-separator", "check-type"],
 
         // Config different from tslint:latest
         "no-implicit-dependencies": [true, "dev"],

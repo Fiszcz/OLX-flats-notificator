@@ -1,8 +1,8 @@
-import { Browser, ElementHandle, Page } from "puppeteer";
+import { Browser, ElementHandle, Page } from 'puppeteer';
 
 export const getAttributeValue = async (rootElement: ElementHandle, selector: string, attribute: string) => {
     try {
-        return await rootElement.$eval(selector, (element) => {
+        return await rootElement.$eval(selector, element => {
             return element.getAttribute(attribute);
         });
     } catch (e) {
@@ -12,7 +12,7 @@ export const getAttributeValue = async (rootElement: ElementHandle, selector: st
 
 export const getInnerHTML = async (rootElement: ElementHandle | Page, selector: string) => {
     try {
-        return await rootElement.$eval(selector, (element) => {
+        return await rootElement.$eval(selector, element => {
             return element.innerHTML;
         });
     } catch (e) {

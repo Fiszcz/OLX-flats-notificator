@@ -16,20 +16,21 @@ export enum Location {
 }
 
 export const findLocationOfFlatInDescription = (text: string): string | Location => {
-    if (text.search(perfectLocalization) >= 0)
-        return Location.PERFECT_LOCATION;
+    if (text.search(perfectLocalization) >= 0) return Location.PERFECT_LOCATION;
 
     const positionInText = text.search(specificLocalization);
-    if (positionInText === -1)
-        return Location.NOT_FOUND;
+    if (positionInText === -1) return Location.NOT_FOUND;
 
     return getTextOfLocation(text.slice(positionInText));
 };
 
 // TODO: describe rules of location text in documentation
 // proposal: use Machine Learning instead manual finding of location
-const getTextOfLocation =  (textWithLocation: string) => {
-    let wordsCount = 0, isSpaceBetweenWords = false, lengthOfWord = 0, endOfAddressText = 0;
+const getTextOfLocation = (textWithLocation: string) => {
+    let wordsCount = 0,
+        isSpaceBetweenWords = false,
+        lengthOfWord = 0,
+        addressStringLength = 0;
     for (const letter of textWithLocation) {
         if (isSpaceSignBetweenWords(letter)) {
             if (isEndOfSentence(letter, lengthOfWord)) {
@@ -45,16 +46,14 @@ const getTextOfLocation =  (textWithLocation: string) => {
             if (isUpperCaseOrDigit(letter)) {
                 isSpaceBetweenWords = false;
                 lengthOfWord = 1;
-            } else
-                break;
+            } else break;
         } else if (isLetterOrDigit(letter) === false) {
             break;
-        } else
-            lengthOfWord++;
-        endOfAddressText++;
+        } else lengthOfWord++;
+        addressStringLength++;
     }
 
-    return textWithLocation.slice(0, endOfAddressText - Number(isSpaceBetweenWords));
+    return textWithLocation.slice(0, addressStringLength - Number(isSpaceBetweenWords));
 };
 
 const isEndOfSentence = (letter: string, lengthPreviousWord: number) => letter === '.' && lengthPreviousWord > 2;

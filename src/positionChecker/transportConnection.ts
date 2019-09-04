@@ -2,7 +2,7 @@ import axios from 'axios';
 import {
     transportDestination as transportDestinationJSON,
     departureTime as departureTimeJSON,
-    GoogleMapsKey
+    GoogleMapsKey,
 } from '../../config/config.json';
 import DirectionsResult = google.maps.DirectionsResult;
 
@@ -21,28 +21,40 @@ export interface TransportInformation {
     timeInSeconds: number;
 }
 
-export const checkTransportTime = async (placeDescription: string): Promise<TransportInformation | undefined> => {
-
-    return axios.get<DirectionsResult>('https://maps.googleapis.com/maps/api/directions/json' +
+const getGoogleMapsAPIUrlRequest = (locationDescription: string) => {
+    return (
+        'https://maps.googleapis.com/maps/api/directions/json' +
         // TODO: move Warszawa to config property
-        '?origin=' + placeDescription.split(' ').join('+') + '+Warszawa' +
-        '&destination=' + transportDestination +
+        '?origin=' +
+        locationDescription.split(' ').join('+') +
+        '+Warszawa' +
+        '&destination=' +
+        transportDestination +
         // TODO: move way of transport to config property
         '&mode=transit' +
-        '&departure_time=' + departureTimeInSeconds +
-        '&key=' + GoogleMapsKey)
-        .then((resp) => resp.data.routes[0].legs[0])
-        .then((informationAboutTransport) => {
-            if (Boolean(informationAboutTransport)) {
-                console.log('[Google Maps]' + informationAboutTransport.duration.text + ' to ' + placeDescription);
-                return {
-                    transportSteps: informationAboutTransport.steps,
-                    textTime: informationAboutTransport.duration.text,
-                    timeInSeconds: informationAboutTransport.duration.value,
-                };
-            }
-        })
-        // TODO: handle error
-        .catch(() => undefined);
+        '&departure_time=' +
+        departureTimeInSeconds +
+        '&key=' +
+        GoogleMapsKey
+    );
+};
 
+export const checkTransportTime = async (locationDescription: string): Promise<TransportInformation | undefined> => {
+    return (
+        axios
+            .get<DirectionsResult>(getGoogleMapsAPIUrlRequest(locationDescription))
+            .then(resp => resp.data.routes[0].legs[0])
+            .then(informationAboutTransport => {
+                if (Boolean(informationAboutTransport)) {
+                    console.log('[Google Maps]' + informationAboutTransport.duration.text + ' to ' + locationDescription);
+                    return {
+                        transportSteps: informationAboutTransport.steps,
+                        textTime: informationAboutTransport.duration.text,
+                        timeInSeconds: informationAboutTransport.duration.value,
+                    };
+                }
+            })
+            // TODO: handle error
+            .catch(() => undefined)
+    );
 };

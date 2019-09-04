@@ -1,21 +1,15 @@
 {
-  "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
-    "lib": [
-      "es6",
-      "dom"
-    ],
-    "allowJs": true,
-    "inlineSourceMap": true,
-    "rootDir": ".",
-    "strict": true,
-    "esModuleInterop": true,
-    "inlineSources": true,
-    "resolveJsonModule": true
-  },
-  "include": [
-    "src/*",
-    "test/*"
-  ]
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "lib": ["es6", "dom"],
+        "allowJs": true,
+        "inlineSourceMap": true,
+        "rootDir": ".",
+        "strict": true,
+        "esModuleInterop": true,
+        "inlineSources": true,
+        "resolveJsonModule": true
+    },
+    "include": ["src/*", "test/*"]
 }
