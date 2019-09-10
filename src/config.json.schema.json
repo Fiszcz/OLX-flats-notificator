@@ -1,0 +1,132 @@
+{
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "config.json",
+    "type": "object",
+    "title": "OLX Config Schema",
+    "required": [
+        "$schema",
+        "emailAddress",
+        "emailService",
+        "emailsReceiver",
+        "GoogleMapsKey",
+        "transportDestination",
+        "departureTime",
+        "maxTransportTime",
+        "filterUrls",
+        "checkInterval",
+        "composeIteration",
+        "sendWorseAdvertisements"
+    ],
+    "properties": {
+        "emailAddress": {
+            "type": "string",
+            "title": "E-mail address of account for sending notification emails",
+            "examples": ["joe.doe@gmail.com"],
+            "format": "email",
+            "minLength": 1
+        },
+        "emailPassword": {
+            "type": "string",
+            "title": "Password to e-mail account for sending notification emails",
+            "examples": ["password123"],
+            "minLength": 1
+        },
+        "emailService": {
+            "type": "string",
+            "title": "Name of email service for email address",
+            "examples": ["gmail"],
+            "minLength": 1
+        },
+        "emailsReceiver": {
+            "type": "string",
+            "title": "Destination e-mail address of notification email",
+            "examples": ["joe.doe@gmail.com"],
+            "format": "email",
+            "minLength": 1
+        },
+        "GoogleMapsKey": {
+            "type": "string",
+            "title": "Google Maps Api Key, necessary to check transport connections for found flats",
+            "examples": ["KEbwGXPP_GmHzW0mWcnKUZ49yFYQpuX2BuSYCwlM"],
+            "minLength": 1
+        },
+        "transportDestination": {
+            "type": "string",
+            "title": "Chosen destination, for which we will want to check transport connections",
+            "examples": ["European Square 1, Warsaw"],
+            "minLength": 1
+        },
+        "departureTime": {
+            "type": "object",
+            "title": "Chosen departure time of checking transport connections",
+            "required": ["month", "day", "hour", "minute"],
+            "properties": {
+                "month": {
+                    "type": "integer",
+                    "title": "Example month for departure",
+                    "examples": [3],
+                    "minimum": 1,
+                    "maximum": 12
+                },
+                "day": {
+                    "type": "integer",
+                    "title": "Example day for departure",
+                    "examples": [28],
+                    "minimum": 1,
+                    "maximum": 31
+                },
+                "hour": {
+                    "type": "integer",
+                    "title": "Hour of departure to selected transport destination",
+                    "examples": [9],
+                    "minimum": 0,
+                    "maximum": 24
+                },
+                "minute": {
+                    "type": "integer",
+                    "title": "Minutes of hour of departure to selected transport destination",
+                    "examples": [30],
+                    "minimum": 0,
+                    "maximum": 59
+                }
+            }
+        },
+        "maxTransportTime": {
+            "type": "integer",
+            "title": "The maximum time of transport to destination location [minutes]",
+            "examples": [30],
+            "minimum": 0
+        },
+        "filterUrls": {
+            "type": "array",
+            "title": "Copied urls of OLX websites with set filters",
+            "items": {
+                "type": "string",
+                "title": "Filter url",
+                "examples": [
+                    "https://www.olx.pl/nieruchomosci/mieszkania/wynajem/warszawa/?search%5Bfilter_float_price%3Afrom%5D=2000&search%5Bfilter_float_price%3Ato%5D=2500&view=list"
+                ],
+                "$comment": "Url should not contain information about pagination or gallery view of advertisements",
+                "pattern": "^(?!.*(page=|view=gallery)).*$",
+                "format": "uri",
+                "minLength": 1
+            }
+        },
+        "checkInterval": {
+            "type": "integer",
+            "title": "Interval time between advertisement checking",
+            "examples": [30],
+            "minimum": 2,
+            "maximum": 1438
+        },
+        "composeIteration": {
+            "type": "boolean",
+            "title": "Compose advertisement from one check to one e-mail"
+        },
+        "sendWorseAdvertisements": {
+            "type": "boolean",
+            "title": "Send advertisements which do not meet requirements"
+        }
+    }
+}

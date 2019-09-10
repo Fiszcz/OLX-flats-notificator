@@ -1,8 +1,9 @@
 {
+    "$schema": "../src/config.json.schema.json",
     "emailAddress": "",
-    "emailService": "gmail",
+    "emailService": "",
     "emailsReceiver": "",
-    "GoogleMapsKey": "",
+    "GoogleMapsKey": "YOUR_GOOGLE_MAPS_KEY",
     "transportDestination": "",
     "departureTime": {
         "month": 3,
