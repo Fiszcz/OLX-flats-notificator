@@ -1,11 +1,7 @@
 import { Browser, ElementHandle, Page } from 'puppeteer';
 import { websiteSelectors } from '../../config/websiteSelectors';
 import { getAttributeValue, getInnerHTML, openPageOnURL } from '../utils/puppeteer';
-
-interface Time {
-    hour: number;
-    minutes: number;
-}
+import { Time } from '../Time/Time';
 
 export class Advertisement {
     public time: Time;
@@ -33,8 +29,7 @@ export class Advertisement {
             console.error('Cannot find time of advertisement!');
             return undefined;
         }
-        const partsOfTime = innerHTMLOfTimeElement.split(':');
-        const time = { hour: Number(partsOfTime[0].slice(-2)), minutes: Number(partsOfTime[1].slice(0, 2)) };
+        const time: Time = new Time(innerHTMLOfTimeElement);
 
         const title = await getInnerHTML(advertisementElement, websiteSelectors.advertisementTitle);
 

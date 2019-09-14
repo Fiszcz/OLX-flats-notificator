@@ -5,7 +5,6 @@ import { findLocationOfFlatInDescription, Location } from './positionChecker/pos
 import { checkTransportTime, TransportInformation } from './positionChecker/transportConnection';
 import { websiteSelectors } from '../config/websiteSelectors';
 import { Advertisement } from './advertisement/Advertisement';
-import { Iteration } from './iteration/Iteration';
 
 export interface Config {
     emailService: string;
@@ -15,6 +14,7 @@ export interface Config {
     composeIteration?: boolean;
     maxTransportTime: number;
     sendWorseAdvertisements?: boolean;
+    checkInterval: number;
 }
 
 export class OLXNotifier {
@@ -24,13 +24,13 @@ export class OLXNotifier {
     private readonly maxTransportTime: number;
     private readonly emailServiceForWorseAdvertisements?: EmailService;
     private advertisementsPage: Page;
-    private iterations: Iteration;
+
+    private checkedAdvertisements: Set<string> = new Set();
 
     constructor(
         emailService: EmailService,
         browser: Browser,
         advertisementsPage: Page,
-        iteration: Iteration,
         filterUrl: string,
         maxTransportTime: number,
         emailServiceForWorseAdvertisements?: EmailService,
@@ -38,7 +38,6 @@ export class OLXNotifier {
         this.emailService = emailService;
         this.browser = browser;
         this.advertisementsPage = advertisementsPage;
-        this.iterations = iteration;
         this.filterUrl = filterUrl;
         this.maxTransportTime = maxTransportTime;
         this.emailServiceForWorseAdvertisements = emailServiceForWorseAdvertisements;
@@ -57,12 +56,10 @@ export class OLXNotifier {
             if (advertisement) {
                 // TODO: fix representation of time
                 advertisement.time.minutes++;
-                const previousIterationTime = new Iteration(advertisement.time);
                 return new OLXNotifier(
                     emailService,
                     browser,
                     advertisementsPage,
-                    previousIterationTime,
                     filterUrl,
                     appConfig.maxTransportTime,
                     emailServiceForWorseAdvertisements,
@@ -86,8 +83,6 @@ export class OLXNotifier {
     };
 
     private getTheLatestAdvertisements = async (): Promise<Advertisement[]> => {
-        this.iterations.startNewIteration();
-
         await this.advertisementsPage.goto(this.filterUrl, { waitUntil: 'domcontentloaded' });
         await this.advertisementsPage.click(websiteSelectors.closeCookie);
 
@@ -97,9 +92,11 @@ export class OLXNotifier {
         });
 
         return (await Promise.all(advertisements).then(advertisements => {
-            return advertisements.filter(
-                advertisement => advertisement && this.iterations.isNewerThanPreviousIteration(advertisement.time, advertisement.title),
+            const newAdvertisements = advertisements.filter(
+                advertisement => advertisement && this.checkedAdvertisements.has(advertisement.href) === false,
             );
+            newAdvertisements.forEach(advertisement => this.checkedAdvertisements.add(advertisement!.href));
+            return newAdvertisements;
         })) as Advertisement[];
     };
 

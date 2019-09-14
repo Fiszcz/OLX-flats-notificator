@@ -1,5 +1,5 @@
 {
-    "$schema": "../src/config.json.schema.json",
+    "$schema": "config.json.schema.json",
     "emailAddress": "",
     "emailService": "",
     "emailsReceiver": "",

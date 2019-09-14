@@ -7,5 +7,4 @@ module.exports = {
     moduleFileExtensions: ['ts', 'js', 'json', 'node'],
     preset: 'ts-jest',
     coverageDirectory: './coverage/',
-    collectCoverage: true,
 };
