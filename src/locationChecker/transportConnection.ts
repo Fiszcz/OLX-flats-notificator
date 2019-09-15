@@ -3,6 +3,7 @@ import {
     transportDestination as transportDestinationJSON,
     departureTime as departureTimeJSON,
     GoogleMapsKey,
+    transportMode,
 } from '../../config/config.json';
 import DirectionsResult = google.maps.DirectionsResult;
 
@@ -31,7 +32,8 @@ const getGoogleMapsAPIUrlRequest = (locationDescription: string) => {
         '&destination=' +
         transportDestination +
         // TODO: move way of transport to config property
-        '&mode=transit' +
+        '&mode=' +
+        (transportMode || 'driving') +
         '&departure_time=' +
         departureTimeInSeconds +
         '&key=' +

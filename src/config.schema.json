@@ -98,6 +98,13 @@
             "examples": [30],
             "minimum": 0
         },
+        "transportMode": {
+            "type": "string",
+            "title": "The way of transport for which system will calculate time of transport",
+            "examples": ["walking"],
+            "enum": ["walking", "driving", "bicycling", "transit"],
+            "default": "driving"
+        },
         "filterUrls": {
             "type": "array",
             "title": "Copied urls of OLX websites with set filters",

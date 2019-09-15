@@ -1,6 +1,6 @@
 import { mocked } from 'ts-jest/utils';
 import axios from 'axios';
-import { checkTransportTime, TransportInformation } from '../src/positionChecker/transportConnection';
+import { checkTransportTime, TransportInformation } from '../src/locationChecker/transportConnection';
 
 jest.mock('axios');
 

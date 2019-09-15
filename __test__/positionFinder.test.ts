@@ -1,4 +1,4 @@
-import { findLocationOfFlatInDescription, Location } from '../src/positionChecker/positionFinder';
+import { findLocationOfFlatInDescription, Location } from '../src/locationChecker/locationFinder';
 
 describe('positionFinder', () => {
     test('should return valid posted place in advertisements', () => {

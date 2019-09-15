@@ -1,5 +1,5 @@
 {
-    "$schema": "config.json.schema.json",
+    "$schema": "../src/config.schema.json",
     "emailAddress": "",
     "emailService": "",
     "emailsReceiver": "",
@@ -12,6 +12,7 @@
         "minute": 0
     },
     "maxTransportTime": 30,
+    "transportMode": "driving",
     "filterUrls": [""],
     "checkInterval": 30,
     "composeIteration": false,

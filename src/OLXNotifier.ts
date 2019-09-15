@@ -1,8 +1,8 @@
 import { Browser, Page } from 'puppeteer';
 import delay from 'delay';
 import { EmailService } from './email/emailService';
-import { findLocationOfFlatInDescription, Location } from './positionChecker/positionFinder';
-import { checkTransportTime, TransportInformation } from './positionChecker/transportConnection';
+import { findLocationOfFlatInDescription, Location } from './locationChecker/locationFinder';
+import { checkTransportTime, TransportInformation } from './locationChecker/transportConnection';
 import { websiteSelectors } from '../config/websiteSelectors';
 import { Advertisement } from './advertisement/Advertisement';
 

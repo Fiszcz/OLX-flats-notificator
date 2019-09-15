@@ -2,9 +2,9 @@ import { Config, OLXNotifier } from '../src/OLXNotifier';
 import { Browser } from 'puppeteer';
 import { Advertisement } from '../src/advertisement/Advertisement';
 import { mocked } from 'ts-jest/utils';
-import { findLocationOfFlatInDescription, Location } from '../src/positionChecker/positionFinder';
+import { findLocationOfFlatInDescription, Location } from '../src/locationChecker/locationFinder';
 import { EmailService } from '../src/email/emailService';
-import { checkTransportTime } from '../src/positionChecker/transportConnection';
+import { checkTransportTime } from '../src/locationChecker/transportConnection';
 import { Time } from '../src/Time/Time';
 
 const config = require('../config/config.json');
@@ -33,8 +33,8 @@ jest.mock('../src/email/emailService', () => {
         })),
     };
 });
-jest.mock('../src/positionChecker/transportConnection');
-jest.mock('../src/positionChecker/positionFinder');
+jest.mock('../src/locationChecker/transportConnection');
+jest.mock('../src/locationChecker/positionFinder');
 
 describe('OLXNotifier', () => {
     beforeEach(() => {
