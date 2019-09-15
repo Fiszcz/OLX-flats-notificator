@@ -1,5 +1,12 @@
 import { findLocationOfFlatInDescription, Location } from '../src/locationChecker/locationFinder';
 
+jest.mock('../config/locationKeywords', () => ({
+    locationKeywords: {
+        perfectLocalization: /obok metra|blisko stacji metra|dobry dojazd|przy samej stacji metra|w centrum Warszawy/gi,
+        specificLocalization: /(ul|ulica|ulicy|os|osiedle|osiedlu|al|aleja|alei|plac|placu|pl|galeria|galerii)(\s|\.|"|„)/gi,
+    },
+}));
+
 describe('positionFinder', () => {
     test('should return valid posted place in advertisements', () => {
         const exampleAdvertisements = [

@@ -1,3 +1,5 @@
+import { locationKeywords } from '../../config/locationKeywords';
+
 const upperCaseOrDigitREGEX = /^[A-ZŻŹĆĄŚĘŁÓŃ0-9]$/;
 const letterOrDigitREGEX = /^[a-zżźćńółęąś0-9]$/i;
 const spaceSignBetweenWordsREGEX = /^[ "„.]$/;
@@ -6,19 +8,15 @@ const isUpperCaseOrDigit = (letter: string) => upperCaseOrDigitREGEX.test(letter
 const isLetterOrDigit = (letter: string) => letterOrDigitREGEX.test(letter);
 const isSpaceSignBetweenWords = (letter: string) => spaceSignBetweenWordsREGEX.test(letter);
 
-// TODO: move to config, and make array (do not create REGEX, instead that use findIndex Array)
-const perfectLocalization = /obok metra|blisko stacji metra|dobry dojazd|przy samej stacji metra|w centrum Warszawy/gi;
-const specificLocalization = /(ul|ulica|ulicy|os|osiedle|osiedlu|al|aleja|alei|plac|placu|pl|galeria|galerii)(\s|\.|"|„)/gi;
-
 export enum Location {
     PERFECT_LOCATION = 1,
     NOT_FOUND = 0,
 }
 
 export const findLocationOfFlatInDescription = (text: string): string | Location => {
-    if (text.search(perfectLocalization) >= 0) return Location.PERFECT_LOCATION;
+    if (text.search(locationKeywords.perfectLocalization) >= 0) return Location.PERFECT_LOCATION;
 
-    const positionInText = text.search(specificLocalization);
+    const positionInText = text.search(locationKeywords.specificLocalization);
     if (positionInText === -1) return Location.NOT_FOUND;
 
     return getTextOfLocation(text.slice(positionInText));
