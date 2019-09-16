@@ -6,8 +6,10 @@ export const websiteSelectors = {
     advertisementTimePublication: '.breadcrumb:nth-child(2)',
     olx: {
         advertisementDescription: 'div.clr.large',
+        basicLocationOfFlat: '.show-map-link strong',
     },
     otoDom: {
         advertisementDescription: 'section.section-description',
+        locationOfFlat: 'header a',
     },
 };

@@ -1,13 +1,18 @@
 import { Browser, ElementHandle, Page } from 'puppeteer';
 import { websiteSelectors } from '../../config/websiteSelectors';
-import { getAttributeValue, getInnerHTML, openPageOnURL } from '../utils/puppeteer';
+import { getAttributeValue, getTextContent, openPageOnURL } from '../utils/puppeteer';
 import { Time } from '../Time/Time';
+import { findLocationOfFlatInDescription, isPerfectLocation } from '../locationChecker/locationFinder';
+import { checkTransportTime, TransportInformation } from '../locationChecker/transportConnection';
 
 export class Advertisement {
     public time: Time;
     public href: string;
     public title: string = '';
-    public description: string = '';
+    public description?: string;
+    public location?: string;
+    public isPerfectLocated: boolean = false;
+    public transportInformation?: TransportInformation;
 
     private advertisementPage?: Page;
 
@@ -24,14 +29,14 @@ export class Advertisement {
             return undefined;
         }
 
-        const innerHTMLOfTimeElement = await getInnerHTML(advertisementElement, websiteSelectors.advertisementTimePublication);
+        const innerHTMLOfTimeElement = await getTextContent(advertisementElement, websiteSelectors.advertisementTimePublication);
         if (!innerHTMLOfTimeElement) {
             console.error('Cannot find time of advertisement!');
             return undefined;
         }
         const time: Time = new Time(innerHTMLOfTimeElement);
 
-        const title = await getInnerHTML(advertisementElement, websiteSelectors.advertisementTitle);
+        const title = await getTextContent(advertisementElement, websiteSelectors.advertisementTitle);
 
         return new Advertisement(advertisementHref, time, title!);
     };
@@ -39,14 +44,30 @@ export class Advertisement {
     public openAdvertisement = async (browser: Browser) => {
         this.advertisementPage = await openPageOnURL(browser, this.href);
 
-        let advertisementDescription: string | undefined;
-        if (this.href.startsWith('https://www.otodom.pl'))
-            advertisementDescription = await getInnerHTML(this.advertisementPage, websiteSelectors.otoDom.advertisementDescription);
-        else advertisementDescription = await getInnerHTML(this.advertisementPage, websiteSelectors.olx.advertisementDescription);
+        if (this.href.startsWith('https://www.otodom.pl')) await this.getDataFromOtodomAdvertisement();
+        else await this.getDataFromOLXAdvertisement();
 
-        if (advertisementDescription === undefined)
-            console.log('Cannot find description of open advertisement: ' + this.title + '\nWith address: ' + this.href + '\n\n');
-        else this.description = advertisementDescription;
+        this.isPerfectLocated = isPerfectLocation(`${this.title}, ${this.description}`);
+        if (this.location) this.transportInformation = await checkTransportTime(this.location);
+
+        if (this.description === undefined)
+            console.warn('Cannot find description of open advertisement: ' + this.title + '\nWith address: ' + this.href + '\n');
+        if (this.location === undefined)
+            console.warn('Cannot find location of flat in open advertisement: ' + this.title + '\nWith address: ' + this.href + '\n');
+        if (this.location && this.transportInformation === undefined)
+            console.warn('Cannot calculate of transport connection for location: ' + this.location);
+    };
+
+    private getDataFromOLXAdvertisement = async () => {
+        this.description = (await getTextContent(this.advertisementPage!, websiteSelectors.olx.advertisementDescription)) || undefined;
+        const basicLocationOfFlat = await getTextContent(this.advertisementPage!, websiteSelectors.olx.basicLocationOfFlat);
+        const locationOfFlat = findLocationOfFlatInDescription(this.title + ', ' + this.description);
+        this.location = basicLocationOfFlat || '' + locationOfFlat + '' || undefined;
+    };
+
+    private getDataFromOtodomAdvertisement = async () => {
+        this.description = (await getTextContent(this.advertisementPage!, websiteSelectors.otoDom.advertisementDescription)) || undefined;
+        this.location = (await getTextContent(this.advertisementPage!, websiteSelectors.otoDom.locationOfFlat)) || undefined;
     };
 
     public takeScreenshot = async () => {

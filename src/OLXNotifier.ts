@@ -1,8 +1,6 @@
 import { Browser, Page } from 'puppeteer';
 import delay from 'delay';
 import { EmailService } from './email/emailService';
-import { findLocationOfFlatInDescription, Location } from './locationChecker/locationFinder';
-import { checkTransportTime, TransportInformation } from './locationChecker/transportConnection';
 import { websiteSelectors } from '../config/websiteSelectors';
 import { Advertisement } from './advertisement/Advertisement';
 
@@ -106,27 +104,26 @@ export class OLXNotifier {
 
         await advertisement.openAdvertisement(this.browser);
 
-        const foundLocation = findLocationOfFlatInDescription(advertisement.title + ', ' + advertisement.description);
         let emailDescription = '';
         let transportTimeInfo = '';
         let isWorseAdvertisement = false;
-        if (foundLocation === Location.PERFECT_LOCATION) transportTimeInfo = '[GOOD LOCATION] ';
-        else if (foundLocation !== Location.NOT_FOUND) {
-            const informationAboutTransport: TransportInformation | undefined = await checkTransportTime(foundLocation);
-            if (informationAboutTransport) {
-                transportTimeInfo = '[' + informationAboutTransport.textTime + '] ';
-                emailDescription =
-                    ' Location: ' + foundLocation + '\n' + informationAboutTransport.transportSteps.map(step => step.html_instructions);
-                if (informationAboutTransport.timeInSeconds > this.maxTransportTime * 60) {
+        if (advertisement.isPerfectLocated) transportTimeInfo = '[PERFECT LOCATION] ';
+        if (advertisement.location !== undefined) {
+            emailDescription = ' Location: ' + advertisement.location;
+            if (advertisement.transportInformation !== undefined) {
+                if (advertisement.transportInformation.timeInSeconds > this.maxTransportTime * 60) {
                     if (this.emailServiceForWorseAdvertisements) isWorseAdvertisement = true;
                     else return;
                 }
+                transportTimeInfo += '[' + advertisement.transportInformation.textTime + '] ';
+                emailDescription +=
+                    'Transport Information' + advertisement.transportInformation.transportSteps.map(step => step.html_instructions);
             }
         }
 
-        const screenshotPath = await advertisement.takeScreenshot();
+        const screenshotPath = (await advertisement.takeScreenshot()) || '';
         (isWorseAdvertisement ? this.emailServiceForWorseAdvertisements! : this.emailService).prepareEmail(
-            screenshotPath || '',
+            screenshotPath,
             advertisement.href,
             transportTimeInfo + advertisement.title,
             emailDescription,

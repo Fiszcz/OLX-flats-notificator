@@ -41,7 +41,7 @@ const getGoogleMapsAPIUrlRequest = (locationDescription: string) => {
     );
 };
 
-export const checkTransportTime = async (locationDescription: string): Promise<TransportInformation | undefined> => {
+export const checkTransportTime = (locationDescription: string): Promise<TransportInformation | undefined> => {
     return (
         axios
             .get<DirectionsResult>(getGoogleMapsAPIUrlRequest(locationDescription))

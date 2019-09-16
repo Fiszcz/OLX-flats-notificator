@@ -10,10 +10,10 @@ export const getAttributeValue = async (rootElement: ElementHandle, selector: st
     }
 };
 
-export const getInnerHTML = async (rootElement: ElementHandle | Page, selector: string) => {
+export const getTextContent = async (rootElement: ElementHandle | Page, selector: string) => {
     try {
         return await rootElement.$eval(selector, element => {
-            return element.innerHTML;
+            return element.textContent;
         });
     } catch (e) {
         return undefined;

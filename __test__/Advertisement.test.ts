@@ -1,12 +1,13 @@
 import { Advertisement } from '../src/advertisement/Advertisement';
 import { mocked } from 'ts-jest/utils';
-import { getAttributeValue, getInnerHTML, openPageOnURL } from '../src/utils/puppeteer';
+import { getAttributeValue, getTextContent, openPageOnURL } from '../src/utils/puppeteer';
 import { Browser, ElementHandle, Page } from 'puppeteer';
 import { websiteSelectors } from '../config/websiteSelectors';
 import { Time } from '../src/Time/Time';
 
 jest.mock('../src/utils/puppeteer');
 jest.mock('../config/websiteSelectors');
+jest.mock('../src/locationChecker/transportConnection');
 
 describe('Advertisement', () => {
     describe('build', () => {
@@ -16,13 +17,13 @@ describe('Advertisement', () => {
         });
 
         test('should return undefined if do not find time of advertisement', async () => {
-            mocked(getInnerHTML).mockResolvedValue(undefined);
+            mocked(getTextContent).mockResolvedValue(undefined);
             expect(await Advertisement.build({} as ElementHandle)).toBeUndefined();
         });
 
         test('should return Advertisement with title, time and href with url address', async () => {
             mocked(getAttributeValue).mockResolvedValue('http://olx.com/advertisement/1000');
-            mocked(getInnerHTML)
+            mocked(getTextContent)
                 .mockResolvedValueOnce('wczoraj 10:50')
                 .mockResolvedValueOnce('Title of Advertisement');
 
@@ -36,26 +37,41 @@ describe('Advertisement', () => {
     });
 
     describe('openAdvertisement', () => {
-        test('should set description of advertisement for otodom website', async () => {
-            websiteSelectors.otoDom.advertisementDescription = 'otoDom';
-            websiteSelectors.olx.advertisementDescription = 'olx';
-            mocked(getInnerHTML).mockImplementation((element, selector) => Promise.resolve(selector));
-            mocked(openPageOnURL).mockResolvedValue({} as Page);
+        describe('should set description and flat location of advertisement for', () => {
+            beforeAll(() => {
+                websiteSelectors.otoDom.advertisementDescription = 'otoDom';
+                websiteSelectors.otoDom.locationOfFlat = 'otoDom location';
+                websiteSelectors.olx.advertisementDescription = 'olx';
+                websiteSelectors.olx.basicLocationOfFlat = 'olx basic location';
 
-            const otodomAdvertisement = new Advertisement('https://www.otodom.pl', new Time('dzisiaj 01:01'), '');
-            await otodomAdvertisement.openAdvertisement({} as Browser);
-            expect(otodomAdvertisement.description).toBe('otoDom');
+                mocked(getTextContent).mockImplementation((element, selector) => Promise.resolve(selector));
+                mocked(openPageOnURL).mockResolvedValue({} as Page);
+            });
 
-            const olxAdvertisement = new Advertisement('https://www.olx.pl', new Time('dzisiaj 01:01'), '');
-            await olxAdvertisement.openAdvertisement({} as Browser);
-            expect(olxAdvertisement.description).toBe('olx');
+            test('otodom website', async () => {
+                const otodomAdvertisement = new Advertisement('https://www.otodom.pl', new Time('dzisiaj 01:01'), '');
+
+                await otodomAdvertisement.openAdvertisement({} as Browser);
+
+                expect(otodomAdvertisement.description).toBe('otoDom');
+                expect(otodomAdvertisement.location).toBe('otoDom location');
+            });
+
+            test('olx website', async () => {
+                const olxAdvertisement = new Advertisement('https://www.olx.pl', new Time('dzisiaj 01:01'), '');
+
+                await olxAdvertisement.openAdvertisement({} as Browser);
+
+                expect(olxAdvertisement.description).toBe('olx');
+                expect(olxAdvertisement.location).toBe('olx basic location');
+            });
         });
     });
 
     describe('takeScreenshot', () => {
         test('if there is open page with advertisement should take screenshot', async () => {
             websiteSelectors.olx.advertisementDescription = 'olx';
-            mocked(getInnerHTML).mockImplementation((element, selector) => Promise.resolve(selector));
+            mocked(getTextContent).mockImplementation((element, selector) => Promise.resolve(selector));
             mocked(openPageOnURL).mockResolvedValue({ screenshot: () => {} } as Page);
 
             const otodomAdvertisement = new Advertisement('https://www.otodom.pl', new Time('dzisiaj 01:02'), 'advertisement title');

@@ -1,13 +1,9 @@
 import { Config, OLXNotifier } from '../src/OLXNotifier';
 import { Browser } from 'puppeteer';
 import { Advertisement } from '../src/advertisement/Advertisement';
-import { mocked } from 'ts-jest/utils';
-import { findLocationOfFlatInDescription, Location } from '../src/locationChecker/locationFinder';
 import { EmailService } from '../src/email/emailService';
-import { checkTransportTime } from '../src/locationChecker/transportConnection';
 import { Time } from '../src/Time/Time';
-
-const config = require('../config/config.json');
+import { TransportInformation } from '../src/locationChecker/transportConnection';
 
 const mockEmailService = {
     prepareEmail: jest.fn(),
@@ -19,6 +15,8 @@ jest.mock('../src/advertisement/Advertisement', () => {
             href,
             time,
             title,
+            isPerfectLocated: false,
+            transportInformation: { timeInSeconds: 0, transportSteps: [], textTime: '' } as TransportInformation,
             openAdvertisement: () => {},
             takeScreenshot: () => {},
             closeAdvertisement: () => {},
@@ -33,28 +31,21 @@ jest.mock('../src/email/emailService', () => {
         })),
     };
 });
-jest.mock('../src/locationChecker/transportConnection');
-jest.mock('../src/locationChecker/positionFinder');
 
 describe('OLXNotifier', () => {
     beforeEach(() => {
-        mockEmailService.prepareEmail.mockClear();
+        jest.clearAllMocks();
     });
 
     describe('build', () => {
-        const mockPage = {
-            $: jest.fn(),
-        };
-
-        const browser: any = {
-            newPage: jest.fn().mockResolvedValue({
-                goto: () => {},
-                $: mockPage.$,
-            }),
-        };
-
-        beforeEach(() => {
-            mockPage.$.mockReturnValue(true);
+        let browser: any;
+        beforeAll(() => {
+            browser = {
+                newPage: jest.fn().mockResolvedValue({
+                    goto: () => {},
+                    $: jest.fn().mockReturnValue(true),
+                }),
+            };
         });
 
         test('should return instance of OLXNotifier', async () => {
@@ -66,7 +57,7 @@ describe('OLXNotifier', () => {
         });
 
         test('return undefined if cannot find advertisements table', async () => {
-            mockPage.$.mockReturnValue(null);
+            browser.mockPage.$.mockReturnValue(null);
 
             expect(await OLXNotifier.build(browser, '', {} as Config)).toBeUndefined();
         });
@@ -84,35 +75,26 @@ describe('OLXNotifier', () => {
             $$: jest.fn(),
             click: () => {},
         };
-        const mockEmailServiceForWorseAdvertisements = {
-            prepareEmail: jest.fn(),
-            sendEmails: jest.fn(),
-        };
 
         let olxNotifier: OLXNotifier;
         beforeEach(() => {
-            mockEmailServiceForWorseAdvertisements.prepareEmail.mockClear();
-            mockEmailServiceForWorseAdvertisements.sendEmails.mockClear();
-
-            olxNotifier = new OLXNotifier(
-                new EmailService({} as any),
-                {} as Browser,
-                mockAdvertisementsPage as any,
-                '',
-                10,
-                mockEmailServiceForWorseAdvertisements as any,
-            );
+            olxNotifier = new OLXNotifier(new EmailService({} as any), {} as Browser, mockAdvertisementsPage as any, '', 10);
         });
 
         test('should make emails only for new not met advertisements', async () => {
-            mocked(findLocationOfFlatInDescription).mockReturnValue(Location.PERFECT_LOCATION);
+            const advertisements = [
+                new Advertisement('olx.pl/1', new Time('dzisiaj 11:30'), 'First Advertisement'),
+                new Advertisement('olx.pl/2', new Time('dzisiaj 11:30'), 'Second Advertisement'),
+                new Advertisement('olx.pl/3', new Time('dzisiaj 11:30'), 'Third Advertisement'),
+            ];
+            advertisements.forEach(advertisement => (advertisement.isPerfectLocated = true));
             // found 3 advertisements
             mockAdvertisementsPage.$$.mockResolvedValue([1, 2, 3]);
             Advertisement.build = jest
                 .fn()
-                .mockResolvedValueOnce(new Advertisement('olx.pl/1', new Time('dzisiaj 11:30'), 'First Advertisement'))
-                .mockResolvedValueOnce(new Advertisement('olx.pl/2', new Time('dzisiaj 11:30'), 'Second Advertisement'))
-                .mockResolvedValueOnce(new Advertisement('olx.pl/3', new Time('dzisiaj 11:30'), 'Third Advertisement'));
+                .mockResolvedValueOnce(advertisements[0])
+                .mockResolvedValueOnce(advertisements[1])
+                .mockResolvedValueOnce(advertisements[2]);
 
             await olxNotifier.examineAdvertisements();
 
@@ -133,12 +115,11 @@ describe('OLXNotifier', () => {
         });
 
         test('should make email for advertisement with perfect location', async () => {
+            const advertisementWithPerfectLocation = new Advertisement('olx.pl/1', new Time('dzisiaj 11:30'), 'First Advertisement');
+            advertisementWithPerfectLocation.isPerfectLocated = true;
             // found 1 advertisement
             mockAdvertisementsPage.$$.mockResolvedValue([1]);
-            Advertisement.build = jest
-                .fn()
-                .mockResolvedValue(new Advertisement('olx.pl/1', new Time('dzisiaj 11:30'), 'First Advertisement'));
-            mocked(findLocationOfFlatInDescription).mockReturnValue(Location.PERFECT_LOCATION);
+            Advertisement.build = jest.fn().mockResolvedValue(advertisementWithPerfectLocation);
 
             await olxNotifier.examineAdvertisements();
 
@@ -146,69 +127,90 @@ describe('OLXNotifier', () => {
         });
 
         test('should make email for advertisement with location with short transport time', async () => {
-            config.maxTransportTime = 10;
+            olxNotifier = new OLXNotifier(new EmailService({} as any), {} as Browser, mockAdvertisementsPage as any, '', 10, undefined);
+            const advertisement = new Advertisement('olx.pl/1', new Time('dzisiaj 11:00'), 'First Advertisement');
+            advertisement.transportInformation!.timeInSeconds = 5;
             // found 1 advertisement
             mockAdvertisementsPage.$$.mockResolvedValue([1]);
-            Advertisement.build = jest
-                .fn()
-                .mockResolvedValue(new Advertisement('olx.pl/1', new Time('dzisiaj 11:00'), 'First Advertisement'));
-            mocked(findLocationOfFlatInDescription).mockReturnValue('some good location');
-            mocked(checkTransportTime).mockResolvedValue({ timeInSeconds: 590, textTime: '9 minutes 50 seconds', transportSteps: [] });
+            Advertisement.build = jest.fn().mockResolvedValue(advertisement);
 
             await olxNotifier.examineAdvertisements();
 
             expect(mockEmailService.prepareEmail).toHaveBeenCalled();
         });
 
-        test('should make email for advertisement if there are not possibility to check location', async () => {
-            // found 2 advertisement
-            mockAdvertisementsPage.$$.mockResolvedValue([1, 2]);
-            Advertisement.build = jest
-                .fn()
-                .mockResolvedValueOnce(new Advertisement('olx.pl/1', new Time('dzisiaj 11:00'), 'First Advertisement'))
-                .mockResolvedValueOnce(new Advertisement('olx.pl/2', new Time('dzisiaj 11:00'), 'Second Advertisement'));
-            mocked(findLocationOfFlatInDescription)
-                .mockReturnValueOnce(Location.NOT_FOUND)
-                .mockReturnValueOnce('some location');
-            mocked(checkTransportTime).mockResolvedValue(undefined);
-
-            await olxNotifier.examineAdvertisements();
-
-            expect(mockEmailService.prepareEmail).toHaveBeenCalledTimes(2);
-        });
-
         test('should not make email for advertisement with location with long transport time', async () => {
-            config.maxTransportTime = 10;
+            olxNotifier = new OLXNotifier(new EmailService({} as any), {} as Browser, mockAdvertisementsPage as any, '', 10, undefined);
             // found 1 advertisement
             mockAdvertisementsPage.$$.mockResolvedValue([1]);
-            Advertisement.build = jest
-                .fn()
-                .mockResolvedValue(new Advertisement('olx.pl/1', new Time('dzisiaj 11:00'), 'First Advertisement'));
-            mocked(findLocationOfFlatInDescription).mockReturnValue('some bad location');
-            mocked(checkTransportTime).mockResolvedValue({ timeInSeconds: 610, textTime: '10 minutes 10 seconds', transportSteps: [] });
+            const advertisement = new Advertisement('olx.pl/1', new Time('dzisiaj 11:00'), 'First Advertisement');
+            advertisement.transportInformation = { timeInSeconds: 1200 } as TransportInformation;
+            advertisement.location = 'some location';
+            Advertisement.build = jest.fn().mockResolvedValue(advertisement);
 
             await olxNotifier.examineAdvertisements();
 
             expect(mockEmailService.prepareEmail).not.toHaveBeenCalled();
         });
 
-        test('should make email for advertisement with location with long transport time if we set config option to send this type of advertisements', async () => {
-            config.maxTransportTime = 10;
+        test('should make email for advertisement with location with long transport time if we set config option to send this type of worse advertisements', async () => {
+            const mockEmailServiceForWorseAdvertisements = {
+                prepareEmail: jest.fn(),
+                sendEmails: jest.fn(),
+            };
+            olxNotifier = new OLXNotifier(
+                new EmailService({} as any),
+                {} as Browser,
+                mockAdvertisementsPage as any,
+                '',
+                10,
+                mockEmailServiceForWorseAdvertisements as any,
+            );
             // found 2 advertisement
             mockAdvertisementsPage.$$.mockResolvedValue([1, 2]);
+            const firstAdvertisement = new Advertisement('olx.pl/1', new Time('dzisiaj 11:00'), 'Good Advertisement');
+            firstAdvertisement.transportInformation = {
+                timeInSeconds: 5,
+                transportSteps: [],
+                textTime: '5 seconds',
+            } as TransportInformation;
+            firstAdvertisement.location = 'Some Good Location';
+            const secondAdvertisement = new Advertisement('olx.pl/2', new Time('dzisiaj 11:00'), 'Worse Advertisement');
+            secondAdvertisement.transportInformation = {
+                timeInSeconds: 1200,
+                textTime: '1200 seconds',
+                transportSteps: [],
+            } as TransportInformation;
+            secondAdvertisement.location = 'Some worse location';
             Advertisement.build = jest
                 .fn()
-                .mockResolvedValueOnce(new Advertisement('olx.pl/1', new Time('dzisiaj 11:00'), 'Good Advertisement'))
-                .mockResolvedValueOnce(new Advertisement('olx.pl/2', new Time('dzisiaj 11:00'), 'Worse Advertisement'));
-            mocked(findLocationOfFlatInDescription)
-                .mockReturnValueOnce(Location.PERFECT_LOCATION)
-                .mockReturnValueOnce('some bad location');
-            mocked(checkTransportTime).mockResolvedValue({ timeInSeconds: 610, textTime: '10 minutes 10 seconds', transportSteps: [] });
+                .mockResolvedValueOnce(firstAdvertisement)
+                .mockResolvedValueOnce(secondAdvertisement);
 
             await olxNotifier.examineAdvertisements();
 
+            expect(mockEmailService.prepareEmail).toHaveBeenCalledTimes(1);
             expect(mockEmailServiceForWorseAdvertisements.prepareEmail).toHaveBeenCalledTimes(1);
-            expect(mockEmailServiceForWorseAdvertisements.prepareEmail).toHaveBeenCalledTimes(1);
+        });
+
+        test('should make email for advertisement if there are not possibility to check location', async () => {
+            // found 1 advertisement
+            mockAdvertisementsPage.$$.mockResolvedValue([1]);
+            const firstAdvertisement = new Advertisement('olx.pl/1', new Time('dzisiaj 11:00'), 'First Advertisement');
+            firstAdvertisement.location = 'some location';
+            firstAdvertisement.isPerfectLocated = false;
+            firstAdvertisement.transportInformation = { timeInSeconds: 3600 } as TransportInformation;
+            Advertisement.build = jest.fn().mockResolvedValue(firstAdvertisement);
+            await olxNotifier.examineAdvertisements();
+
+            expect(mockEmailService.prepareEmail).not.toHaveBeenCalled();
+
+            const secondAdvertisement = new Advertisement('olx.pl/2', new Time('dzisiaj 11:00'), 'Second Advertisement');
+            secondAdvertisement.location = undefined;
+            Advertisement.build = jest.fn().mockResolvedValue(secondAdvertisement);
+            await olxNotifier.examineAdvertisements();
+
+            expect(mockEmailService.prepareEmail).toHaveBeenCalled();
         });
     });
 });

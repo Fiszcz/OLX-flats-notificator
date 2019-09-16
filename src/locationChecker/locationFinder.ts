@@ -1,5 +1,14 @@
 import { locationKeywords } from '../../config/locationKeywords';
 
+export const isPerfectLocation = (text: string): boolean => text.search(locationKeywords.perfectLocalization) >= 0;
+
+export const findLocationOfFlatInDescription = (text: string): string | undefined => {
+    const positionInText = text.search(locationKeywords.specificLocalization);
+    if (positionInText === -1) return undefined;
+
+    return getTextOfLocation(text.slice(positionInText));
+};
+
 const upperCaseOrDigitREGEX = /^[A-ZŻŹĆĄŚĘŁÓŃ0-9]$/;
 const letterOrDigitREGEX = /^[a-zżźćńółęąś0-9]$/i;
 const spaceSignBetweenWordsREGEX = /^[ "„.]$/;
@@ -7,20 +16,6 @@ const spaceSignBetweenWordsREGEX = /^[ "„.]$/;
 const isUpperCaseOrDigit = (letter: string) => upperCaseOrDigitREGEX.test(letter);
 const isLetterOrDigit = (letter: string) => letterOrDigitREGEX.test(letter);
 const isSpaceSignBetweenWords = (letter: string) => spaceSignBetweenWordsREGEX.test(letter);
-
-export enum Location {
-    PERFECT_LOCATION = 1,
-    NOT_FOUND = 0,
-}
-
-export const findLocationOfFlatInDescription = (text: string): string | Location => {
-    if (text.search(locationKeywords.perfectLocalization) >= 0) return Location.PERFECT_LOCATION;
-
-    const positionInText = text.search(locationKeywords.specificLocalization);
-    if (positionInText === -1) return Location.NOT_FOUND;
-
-    return getTextOfLocation(text.slice(positionInText));
-};
 
 // TODO: describe rules of location text in documentation
 // proposal: use Machine Learning instead manual finding of location
