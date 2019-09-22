@@ -15,10 +15,8 @@ jest.mock('../../config/config.json', () => ({
         },
     ],
     departureTime: {
-        month: 3,
-        day: 28,
-        hour: 9,
-        minute: 0,
+        weekday: 'monday',
+        time: '13:50',
     },
 }));
 jest.mock('axios');

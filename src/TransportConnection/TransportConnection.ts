@@ -7,6 +7,7 @@ import {
 } from '../../config/config.json';
 import DirectionsResult = google.maps.DirectionsResult;
 import DirectionsStep = google.maps.DirectionsStep;
+import { DepartureTime, Weekdays } from '../DepartureTime/DepartureTime';
 
 const transportDestinations = (transportDestinationJSON || []).map(destination => ({
     location: destination.location,
@@ -14,12 +15,7 @@ const transportDestinations = (transportDestinationJSON || []).map(destination =
     maxTime: destination.maxTransportTime,
 }));
 
-const departureTime = new Date();
-departureTime.setMonth(departureTimeJSON.month);
-departureTime.setDate(departureTimeJSON.day);
-departureTime.setHours(departureTimeJSON.hour);
-departureTime.setMinutes(departureTimeJSON.minute);
-const departureTimeInSeconds = Math.floor(departureTime.getTime() / 1000).toString();
+const departureDate = new DepartureTime(departureTimeJSON as { weekday: keyof typeof Weekdays; time: string });
 
 export interface TransportInformation {
     transportSteps: DirectionsStep[];
@@ -39,7 +35,7 @@ const getGoogleMapsAPIUrlRequest = (flatLocation: string, transportDestination: 
         '&mode=' +
         (transportMode || 'driving') +
         '&departure_time=' +
-        departureTimeInSeconds +
+        departureDate.getDepartureTime() +
         '&key=' +
         GoogleMapsKey
     );
