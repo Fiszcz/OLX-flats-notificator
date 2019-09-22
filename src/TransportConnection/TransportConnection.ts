@@ -8,7 +8,7 @@ import {
 import DirectionsResult = google.maps.DirectionsResult;
 import DirectionsStep = google.maps.DirectionsStep;
 
-const transportDestinations = transportDestinationJSON.map(destination => ({
+const transportDestinations = (transportDestinationJSON || []).map(destination => ({
     location: destination.location,
     locationToAPI: destination.location.replace(/[&,.\s\\/-]/g, '+'),
     maxTime: destination.maxTransportTime,

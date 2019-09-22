@@ -10,7 +10,6 @@
         "emailService",
         "emailsReceiver",
         "GoogleMapsKey",
-        "transportDestination",
         "departureTime",
         "filterUrls",
         "checkInterval",
