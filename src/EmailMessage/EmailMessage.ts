@@ -15,7 +15,7 @@ export class EmailMessage implements EmailMessageInterface {
 
     private transportInformation = () => {
         let transportInformation = '';
-        if (this.advertisement.isPerfectLocated) return 'Perfect Location 👌🤩' + '\n';
+        if (this.advertisement.isPerfectLocated) transportInformation += 'Perfect Location 👌🤩' + '\n';
         for (const connection of this.advertisement.transportInformation || []) {
             transportInformation += connection.hasSatisfiedTime ? '👍🕑' : '🤬🕑';
             transportInformation += ` ${connection.textTime}`;
@@ -26,9 +26,13 @@ export class EmailMessage implements EmailMessageInterface {
     };
 
     public get subject(): string {
-        // TODO: add information about transport time (for example: without location)
         // TODO: add url of filter url
-        return `[${this.advertisement.time}] - ${this.advertisement.title}`;
+        let shortTransportInformation = '';
+        if (this.advertisement.isPerfectLocated) shortTransportInformation = '{Perfect Location 👌🤩}';
+        for (const connection of this.advertisement.transportInformation || []) {
+            shortTransportInformation += ` [${connection.location.substr(0, 6)} - ${connection.textTime}]`;
+        }
+        return `[${this.advertisement.time}] -${shortTransportInformation} - ${this.advertisement.title}`;
     }
 
     public get message(): string {

@@ -21,7 +21,7 @@ export interface TransportInformation {
     transportSteps: DirectionsStep[];
     textTime: string;
     timeInMinutes: number;
-    hasSatisfiedTime: boolean;
+    hasSatisfiedTime?: boolean;
     location: string;
 }
 
@@ -61,7 +61,15 @@ export const checkTransportTime = async (flatLocation: string): Promise<Transpor
                 }
             })
             // TODO: handle error
-            .catch(() => undefined),
+            .catch(
+                () =>
+                    ({
+                        location: destination.location,
+                        transportSteps: [],
+                        textTime: 'Cannot check ☹️',
+                        timeInMinutes: NaN,
+                    } as TransportInformation),
+            ),
     );
     return Promise.all(requests).then(results => results.filter(result => result !== undefined) as TransportInformation[]);
 };

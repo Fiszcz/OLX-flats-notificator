@@ -44,3 +44,18 @@ export const mappedResponseToTransportInformation: TransportInformation[] = [
         location: 'some other location',
     },
 ];
+
+export const responseForFailure: TransportInformation[] = [
+    {
+        location: 'some location',
+        textTime: 'Cannot check ☹️',
+        timeInMinutes: NaN,
+        transportSteps: [],
+    },
+    {
+        location: 'some other location',
+        textTime: 'Cannot check ☹️',
+        timeInMinutes: NaN,
+        transportSteps: [],
+    },
+];

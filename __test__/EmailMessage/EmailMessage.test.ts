@@ -17,11 +17,13 @@ describe('EmailMessage', () => {
         expect(emailMessage.attachments).toMatchObject([advertisement.screenshotPath]);
     });
 
-    test('if advertisement has perfect location, message should contain information about it', () => {
+    test('if advertisement has perfect location, message ans subject should contain information about it', () => {
         advertisement.isPerfectLocated = true;
         expect(emailMessage.message).toMatch(/Perfect Location/);
+        expect(emailMessage.subject).toMatch(/Perfect Location/);
 
         advertisement.isPerfectLocated = false;
         expect(emailMessage.message).not.toMatch(/Perfect Location/);
+        expect(emailMessage.subject).not.toMatch(/Perfect Location/);
     });
 });

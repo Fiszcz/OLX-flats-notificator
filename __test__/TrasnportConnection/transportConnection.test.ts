@@ -1,7 +1,7 @@
 import { mocked } from 'ts-jest/utils';
 import axios from 'axios';
 import { checkTransportTime } from '../../src/TransportConnection/TransportConnection';
-import { mappedResponseToTransportInformation, responsesFromGoogleDirectionsAPI } from './transportConnection.fixture';
+import { mappedResponseToTransportInformation, responseForFailure, responsesFromGoogleDirectionsAPI } from './transportConnection.fixture';
 
 jest.mock('../../config/config.json', () => ({
     transportDestination: [
@@ -26,12 +26,16 @@ describe('checkTransportTime', () => {
         mocked(axios).mockClear();
     });
 
-    test('return empty results if communication with Google Api was finished with failure', async () => {
+    test('return results with information about unable check transport information if communication with Google Api was finished with failure', async () => {
         mocked(axios.get)
             // @ts-ignore
-            .mockRejectedValue({});
+            .mockResolvedValueOnce({ data: responsesFromGoogleDirectionsAPI[0] })
+            .mockRejectedValueOnce({});
 
-        expect(await checkTransportTime('ulica Powstancow')).toMatchObject([]);
+        expect(await checkTransportTime('ulica Powstancow')).toMatchObject([
+            mappedResponseToTransportInformation[0],
+            responseForFailure[1],
+        ]);
     });
 
     test('return transport information mapped from success Google Api request', async () => {
@@ -41,14 +45,5 @@ describe('checkTransportTime', () => {
             .mockResolvedValueOnce({ data: responsesFromGoogleDirectionsAPI[1] });
 
         expect(await checkTransportTime('ulica Powstancow')).toMatchObject(mappedResponseToTransportInformation);
-    });
-
-    test('do not return data after problems with finding information about transport by API', async () => {
-        mocked(axios.get)
-            // @ts-ignore
-            .mockResolvedValueOnce({ data: responsesFromGoogleDirectionsAPI[0] })
-            .mockRejectedValueOnce({});
-
-        expect(await checkTransportTime('ulica Powstancow')).toHaveLength(1);
     });
 });

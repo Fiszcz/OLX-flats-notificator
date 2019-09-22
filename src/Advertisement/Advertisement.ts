@@ -66,7 +66,7 @@ export class Advertisement {
         this.description = (await getTextContent(this.advertisementPage!, websiteSelectors.olx.advertisementDescription)) || undefined;
         const basicLocationOfFlat = await getTextContent(this.advertisementPage!, websiteSelectors.olx.basicLocationOfFlat);
         const locationOfFlat = findLocationOfFlatInDescription(this.title + ', ' + this.description);
-        this.location = basicLocationOfFlat || '' + locationOfFlat + '' || undefined;
+        this.location = basicLocationOfFlat || '' + locationOfFlat || '' || undefined;
     };
 
     private getDataFromOtodomAdvertisement = async () => {
