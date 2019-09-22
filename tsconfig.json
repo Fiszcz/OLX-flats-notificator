@@ -2,7 +2,7 @@
     "compilerOptions": {
         "target": "es6",
         "module": "commonjs",
-        "lib": ["es6", "dom"],
+        "lib": ["es2019", "dom"],
         "allowJs": true,
         "inlineSourceMap": true,
         "rootDir": ".",

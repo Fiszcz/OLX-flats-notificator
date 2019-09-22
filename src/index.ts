@@ -5,8 +5,6 @@ import inquirer from 'inquirer';
 const appConfig = require('../config/config.json');
 
 export const index = async () => {
-    const browser = await puppeteer.launch();
-
     while (Boolean(appConfig.emailPassword) === false) {
         appConfig.emailPassword = await inquirer
             .prompt({
@@ -16,6 +14,8 @@ export const index = async () => {
             })
             .then(answer => answer.emailPassword);
     }
+
+    const browser = await puppeteer.launch();
 
     for (const filterUrl of appConfig.filterUrls) {
         const olxNotifier = await OLXNotifier.build(browser, filterUrl, appConfig);

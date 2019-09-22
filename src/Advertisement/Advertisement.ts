@@ -1,22 +1,23 @@
 import { Browser, ElementHandle, Page } from 'puppeteer';
 import { websiteSelectors } from '../../config/websiteSelectors';
 import { getAttributeValue, getTextContent, openPageOnURL } from '../utils/puppeteer';
-import { Time } from '../Time/Time';
-import { findLocationOfFlatInDescription, isPerfectLocation } from '../locationChecker/locationFinder';
-import { checkTransportTime, TransportInformation } from '../locationChecker/transportConnection';
+import { findLocationOfFlatInDescription, isPerfectLocation } from '../LocationFinder/LocationFinder';
+import { checkTransportTime, TransportInformation } from '../TransportConnection/TransportConnection';
 
 export class Advertisement {
-    public time: Time;
+    public time: string;
     public href: string;
     public title: string = '';
     public description?: string;
     public location?: string;
     public isPerfectLocated: boolean = false;
-    public transportInformation?: TransportInformation;
+    public transportInformation?: TransportInformation[];
+    public screenshotPath?: string;
+    public isWorse?: boolean;
 
     private advertisementPage?: Page;
 
-    constructor(href: string, time: Time, title: string) {
+    constructor(href: string, time: string, title: string) {
         this.href = href;
         this.time = time;
         this.title = title;
@@ -34,11 +35,11 @@ export class Advertisement {
             console.error('Cannot find time of advertisement!');
             return undefined;
         }
-        const time: Time = new Time(innerHTMLOfTimeElement);
+        const timePart = innerHTMLOfTimeElement.split(' ')[1];
 
         const title = await getTextContent(advertisementElement, websiteSelectors.advertisementTitle);
 
-        return new Advertisement(advertisementHref, time, title!);
+        return new Advertisement(advertisementHref, timePart, title!);
     };
 
     public openAdvertisement = async (browser: Browser) => {
@@ -48,13 +49,16 @@ export class Advertisement {
         else await this.getDataFromOLXAdvertisement();
 
         this.isPerfectLocated = isPerfectLocation(`${this.title}, ${this.description}`);
-        if (this.location) this.transportInformation = await checkTransportTime(this.location);
+        if (this.location) {
+            this.transportInformation = await checkTransportTime(this.location);
+            this.isWorse = this.transportInformation.some(transportInformation => transportInformation.hasSatisfiedTime === false);
+        }
 
         if (this.description === undefined)
             console.warn('Cannot find description of open advertisement: ' + this.title + '\nWith address: ' + this.href + '\n');
         if (this.location === undefined)
             console.warn('Cannot find location of flat in open advertisement: ' + this.title + '\nWith address: ' + this.href + '\n');
-        if (this.location && this.transportInformation === undefined)
+        if (this.location && this.transportInformation && this.transportInformation.length === 0)
             console.warn('Cannot calculate of transport connection for location: ' + this.location);
     };
 
@@ -72,19 +76,17 @@ export class Advertisement {
 
     public takeScreenshot = async () => {
         if (this.advertisementPage) {
-            const screenshotPath =
+            this.screenshotPath =
                 '../screenshots/' +
-                this.time.hour +
-                ':' +
-                this.time.minutes +
+                this.time.replace(':', '-') +
                 '_' +
                 this.title +
                 '_' +
                 (Math.floor(Math.random() * 100) + 1).toString() +
                 '.png';
-            await this.advertisementPage.screenshot({ path: screenshotPath, fullPage: true });
-            console.log('Screenshot has been taken - file: ' + screenshotPath + ' from: ' + this.href);
-            return screenshotPath;
+            await this.advertisementPage.screenshot({ path: this.screenshotPath, fullPage: true });
+            console.log('Screenshot has been taken - file: ' + this.screenshotPath + ' from: ' + this.href);
+            return this.screenshotPath;
         } else console.log('Cannot take screenshot');
     };
 

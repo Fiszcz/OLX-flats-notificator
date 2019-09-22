@@ -12,7 +12,6 @@
         "GoogleMapsKey",
         "transportDestination",
         "departureTime",
-        "maxTransportTime",
         "filterUrls",
         "checkInterval",
         "composeIteration",
@@ -52,10 +51,28 @@
             "minLength": 1
         },
         "transportDestination": {
-            "type": "string",
+            "type": "array",
             "title": "Chosen destination, for which we will want to check transport connections",
             "examples": ["European Square 1, Warsaw"],
-            "minLength": 1
+            "minLength": 1,
+            "items": {
+                "type": "object",
+                "required": ["location", "maxTransportTime"],
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "title": "Location of transport destination",
+                        "examples": ["University of Warsaw, Warsaw"],
+                        "minLength": 1
+                    },
+                    "maxTransportTime": {
+                        "type": "integer",
+                        "title": "Max possible type for transport connection between flat and destination location [in minutes]",
+                        "examples": [30],
+                        "minimum": 0
+                    }
+                }
+            }
         },
         "departureTime": {
             "type": "object",
@@ -91,12 +108,6 @@
                     "maximum": 59
                 }
             }
-        },
-        "maxTransportTime": {
-            "type": "integer",
-            "title": "The maximum time of transport to destination location [minutes]",
-            "examples": [30],
-            "minimum": 0
         },
         "transportMode": {
             "type": "string",

@@ -1,8 +1,10 @@
 import { Browser, Page } from 'puppeteer';
 import delay from 'delay';
-import { EmailService } from './email/emailService';
+import { EmailService } from './EmailService/EmailService';
 import { websiteSelectors } from '../config/websiteSelectors';
-import { Advertisement } from './advertisement/Advertisement';
+import { Advertisement } from './Advertisement/Advertisement';
+import { EmailMessage } from './EmailMessage/EmailMessage';
+import { composeEmailMessages } from './EmailMessage/composeEmailMessages';
 
 export interface Config {
     emailService: string;
@@ -19,31 +21,32 @@ export class OLXNotifier {
     private readonly browser: Browser;
     private readonly emailService: EmailService;
     private readonly filterUrl: string;
-    private readonly maxTransportTime: number;
-    private readonly emailServiceForWorseAdvertisements?: EmailService;
+    private readonly isWorseAdvertisementsAcceptable: boolean;
+    private readonly shouldComposeIteration: boolean;
     private advertisementsPage: Page;
 
     private checkedAdvertisements: Set<string> = new Set();
+    private emailMessages: EmailMessage[] = [];
+    private emailMessagesForWorseAdvertisements: EmailMessage[] = [];
 
     constructor(
         emailService: EmailService,
         browser: Browser,
         advertisementsPage: Page,
         filterUrl: string,
-        maxTransportTime: number,
-        emailServiceForWorseAdvertisements?: EmailService,
+        isWorseAdvertisementsAcceptable?: boolean,
+        shouldComposeIteration?: boolean,
     ) {
         this.emailService = emailService;
         this.browser = browser;
         this.advertisementsPage = advertisementsPage;
         this.filterUrl = filterUrl;
-        this.maxTransportTime = maxTransportTime;
-        this.emailServiceForWorseAdvertisements = emailServiceForWorseAdvertisements;
+        this.isWorseAdvertisementsAcceptable = isWorseAdvertisementsAcceptable || false;
+        this.shouldComposeIteration = shouldComposeIteration || false;
     }
 
     static build = async (browser: Browser, filterUrl: string, appConfig: Config) => {
         const emailService = new EmailService(appConfig);
-        const emailServiceForWorseAdvertisements = appConfig.sendWorseAdvertisements ? new EmailService(appConfig) : undefined;
 
         const advertisementsPage = await browser.newPage();
         await advertisementsPage.goto(filterUrl, { waitUntil: 'domcontentloaded' });
@@ -52,15 +55,13 @@ export class OLXNotifier {
         if (advertisementsTable) {
             const advertisement = await Advertisement.build(advertisementsTable);
             if (advertisement) {
-                // TODO: fix representation of time
-                advertisement.time.minutes++;
                 return new OLXNotifier(
                     emailService,
                     browser,
                     advertisementsPage,
                     filterUrl,
-                    appConfig.maxTransportTime,
-                    emailServiceForWorseAdvertisements,
+                    appConfig.sendWorseAdvertisements,
+                    appConfig.composeIteration,
                 );
             }
         }
@@ -76,8 +77,26 @@ export class OLXNotifier {
             // artificial retarder to avoid detection by the OLX service
             await delay(1000);
         }
-        this.emailService.sendEmails();
-        if (this.emailServiceForWorseAdvertisements) this.emailServiceForWorseAdvertisements.sendEmails('[WORSE]');
+
+        this.sendEmails();
+        this.emailMessages = [];
+        this.emailMessagesForWorseAdvertisements = [];
+    };
+
+    private sendEmails = () => {
+        if (this.isWorseAdvertisementsAcceptable && this.emailMessagesForWorseAdvertisements.length) {
+            const title = `💩 Worse advertisements - (${this.emailMessagesForWorseAdvertisements.length} ads)`;
+            this.emailService.sendEmails([composeEmailMessages([...this.emailMessagesForWorseAdvertisements], title)]);
+        }
+
+        if (this.emailMessages.length) {
+            if (this.shouldComposeIteration) {
+                const title = `😃 Good advertisements - (${this.emailMessages.length} ads)`;
+                this.emailService.sendEmails([composeEmailMessages([...this.emailMessages], title)]);
+            } else {
+                this.emailService.sendEmails([...this.emailMessages]);
+            }
+        }
     };
 
     private getTheLatestAdvertisements = async (): Promise<Advertisement[]> => {
@@ -104,29 +123,11 @@ export class OLXNotifier {
 
         await advertisement.openAdvertisement(this.browser);
 
-        let emailDescription = '';
-        let transportTimeInfo = '';
-        let isWorseAdvertisement = false;
-        if (advertisement.isPerfectLocated) transportTimeInfo = '[PERFECT LOCATION] ';
-        if (advertisement.location !== undefined) {
-            emailDescription = ' Location: ' + advertisement.location;
-            if (advertisement.transportInformation !== undefined) {
-                if (advertisement.transportInformation.timeInSeconds > this.maxTransportTime * 60) {
-                    if (this.emailServiceForWorseAdvertisements) isWorseAdvertisement = true;
-                    else return;
-                }
-                transportTimeInfo += '[' + advertisement.transportInformation.textTime + '] ';
-                emailDescription +=
-                    'Transport Information' + advertisement.transportInformation.transportSteps.map(step => step.html_instructions);
-            }
-        }
+        if (advertisement.isWorse && this.isWorseAdvertisementsAcceptable === false) return;
 
-        const screenshotPath = (await advertisement.takeScreenshot()) || '';
-        (isWorseAdvertisement ? this.emailServiceForWorseAdvertisements! : this.emailService).prepareEmail(
-            screenshotPath,
-            advertisement.href,
-            transportTimeInfo + advertisement.title,
-            emailDescription,
-        );
+        await advertisement.takeScreenshot();
+
+        if (advertisement.isWorse) this.emailMessagesForWorseAdvertisements.push(new EmailMessage(advertisement));
+        else this.emailMessages.push(new EmailMessage(advertisement));
     };
 }
