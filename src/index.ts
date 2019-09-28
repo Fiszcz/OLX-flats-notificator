@@ -18,11 +18,8 @@ export const index = async () => {
     const browser = await puppeteer.launch();
 
     for (const filterUrl of appConfig.filterUrls) {
-        const olxNotifier = await OLXNotifier.build(browser, filterUrl, appConfig);
-        if (olxNotifier === undefined) {
-            console.error('Cannot run');
-            return -1;
-        }
+        const olxNotifier = new OLXNotifier(browser, await browser.newPage(), filterUrl, appConfig);
+
         setInterval(olxNotifier.examineAdvertisements, appConfig.checkInterval * 60000);
     }
 };

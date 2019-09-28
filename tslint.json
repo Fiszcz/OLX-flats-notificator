@@ -48,12 +48,11 @@
             {
                 "call-signature": "onespace",
                 "index-signature": "onespace",
-                "parameter": "onespace",
                 "property-declaration": "onespace",
                 "variable-declaration": "onespace"
             }
         ],
-        "whitespace": [true, "check-branch", "check-decl", "check-operator", "check-separator", "check-type"],
+        "whitespace": [true, "check-branch", "check-decl", "check-operator", "check-type"],
 
         // Config different from tslint:latest
         "no-implicit-dependencies": [true, "dev"],

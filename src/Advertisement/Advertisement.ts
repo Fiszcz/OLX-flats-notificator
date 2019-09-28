@@ -1,6 +1,6 @@
 import { Browser, ElementHandle, Page } from 'puppeteer';
 import { websiteSelectors } from '../../config/websiteSelectors';
-import { getAttributeValue, getTextContent, openPageOnURL } from '../utils/puppeteer';
+import { click, getAttributeValue, getTextContent, openPageOnURL } from '../utils/puppeteer';
 import { findLocationOfFlatInDescription, isPerfectLocation } from '../LocationFinder/LocationFinder';
 import { checkTransportTime, TransportInformation } from '../TransportConnection/TransportConnection';
 
@@ -84,6 +84,7 @@ export class Advertisement {
                 '_' +
                 (Math.floor(Math.random() * 100) + 1).toString() +
                 '.png';
+            await click(this.advertisementPage, websiteSelectors.closeCookie);
             await this.advertisementPage.screenshot({ path: this.screenshotPath, fullPage: true });
             console.log('Screenshot has been taken - file: ' + this.screenshotPath + ' from: ' + this.href);
             return this.screenshotPath;

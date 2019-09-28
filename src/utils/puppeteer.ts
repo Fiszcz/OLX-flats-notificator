@@ -1,6 +1,6 @@
 import { Browser, ElementHandle, Page } from 'puppeteer';
 
-export const getAttributeValue = async (rootElement: ElementHandle, selector: string, attribute: string) => {
+export const getAttributeValue = async (rootElement: ElementHandle | Page, selector: string, attribute: string) => {
     try {
         return await rootElement.$eval(selector, element => {
             return element.getAttribute(attribute);
@@ -24,4 +24,12 @@ export const openPageOnURL = async (browser: Browser, url: string) => {
     const newPage = await browser.newPage();
     await newPage.goto(url);
     return newPage;
+};
+
+export const click = async (page: Page, selector: string) => {
+    try {
+        await page.click(selector);
+    } catch (e) {
+        return undefined;
+    }
 };

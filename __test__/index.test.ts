@@ -8,7 +8,11 @@ appConfig.filterUrls = ['olx.pl/filter/123'];
 
 jest.mock('inquirer');
 jest.mock('../src/OLXNotifier');
-jest.mock('puppeteer');
+jest.mock('puppeteer', () => ({
+    launch: () => ({
+        newPage: () => {},
+    }),
+}));
 
 describe('index', () => {
     beforeEach(() => {
@@ -21,7 +25,7 @@ describe('index', () => {
 
         await index();
 
-        expect(mocked(OLXNotifier.build)).toHaveBeenCalled();
+        expect(mocked(OLXNotifier)).toHaveBeenCalled();
     });
 
     test('should ask user about password to email account', async () => {
@@ -33,6 +37,6 @@ describe('index', () => {
         await index();
 
         expect(mockedPasswordPrompt).toHaveBeenCalledTimes(2);
-        expect(mocked(OLXNotifier.build)).toHaveBeenCalled();
+        expect(mocked(OLXNotifier)).toHaveBeenCalled();
     });
 });

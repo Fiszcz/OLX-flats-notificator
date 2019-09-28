@@ -5,6 +5,8 @@ import { websiteSelectors } from '../config/websiteSelectors';
 import { Advertisement } from './Advertisement/Advertisement';
 import { EmailMessage } from './EmailMessage/EmailMessage';
 import { composeEmailMessages } from './EmailMessage/composeEmailMessages';
+import { getAttributeValue } from './utils/puppeteer';
+import AsyncLock from 'async-lock';
 
 export interface Config {
     emailService: string;
@@ -23,64 +25,46 @@ export class OLXNotifier {
     private readonly filterUrl: string;
     private readonly isWorseAdvertisementsAcceptable: boolean;
     private readonly shouldComposeIteration: boolean;
-    private advertisementsPage: Page;
+    private readonly browserPage: Page;
+
+    private readonly operationsLock: AsyncLock;
 
     private checkedAdvertisements: Set<string> = new Set();
     private emailMessages: EmailMessage[] = [];
     private emailMessagesForWorseAdvertisements: EmailMessage[] = [];
 
-    constructor(
-        emailService: EmailService,
-        browser: Browser,
-        advertisementsPage: Page,
-        filterUrl: string,
-        isWorseAdvertisementsAcceptable?: boolean,
-        shouldComposeIteration?: boolean,
-    ) {
-        this.emailService = emailService;
+    constructor(browser: Browser, browserPage: Page, filterUrl: string, appConfig: Config) {
+        this.emailService = new EmailService(appConfig);
         this.browser = browser;
-        this.advertisementsPage = advertisementsPage;
+        this.browserPage = browserPage;
         this.filterUrl = filterUrl;
-        this.isWorseAdvertisementsAcceptable = isWorseAdvertisementsAcceptable || false;
-        this.shouldComposeIteration = shouldComposeIteration || false;
+        this.isWorseAdvertisementsAcceptable = appConfig.sendWorseAdvertisements || false;
+        this.shouldComposeIteration = appConfig.composeIteration || false;
+
+        this.operationsLock = new AsyncLock();
+
+        this.operationsLock.acquire('getting new advertisements', async () => {
+            const advertisements = await this.getAdvertisementsFromPage(filterUrl);
+            advertisements.forEach(advertisement => advertisement && this.checkedAdvertisements.add(advertisement.href));
+        });
     }
 
-    static build = async (browser: Browser, filterUrl: string, appConfig: Config) => {
-        const emailService = new EmailService(appConfig);
-
-        const advertisementsPage = await browser.newPage();
-        await advertisementsPage.goto(filterUrl, { waitUntil: 'domcontentloaded' });
-
-        const advertisementsTable = await advertisementsPage.$(websiteSelectors.tableOffers);
-        if (advertisementsTable) {
-            const advertisement = await Advertisement.build(advertisementsTable);
-            if (advertisement) {
-                return new OLXNotifier(
-                    emailService,
-                    browser,
-                    advertisementsPage,
-                    filterUrl,
-                    appConfig.sendWorseAdvertisements,
-                    appConfig.composeIteration,
-                );
-            }
-        }
-        return undefined;
-    };
-
     public examineAdvertisements = async () => {
-        const theLatestAdvertisements: Advertisement[] = await this.getTheLatestAdvertisements();
-        for (const advertisement of theLatestAdvertisements) {
-            await this.examineAdvertisement(advertisement);
-            await advertisement.closeAdvertisement();
+        await this.operationsLock.acquire('getting new advertisements', async () => {
+            for (const advertisement of await this.getNewAdvertisements()) {
+                this.checkedAdvertisements.add(advertisement.href);
 
-            // artificial retarder to avoid detection by the OLX service
-            await delay(1000);
-        }
+                await this.examineAdvertisement(advertisement);
+                await advertisement.closeAdvertisement();
 
-        this.sendEmails();
-        this.emailMessages = [];
-        this.emailMessagesForWorseAdvertisements = [];
+                // artificial retarder to avoid detection by the OLX service
+                await delay(1000);
+            }
+
+            this.sendEmails();
+            this.emailMessages = [];
+            this.emailMessagesForWorseAdvertisements = [];
+        });
     };
 
     private sendEmails = () => {
@@ -99,22 +83,34 @@ export class OLXNotifier {
         }
     };
 
-    private getTheLatestAdvertisements = async (): Promise<Advertisement[]> => {
-        await this.advertisementsPage.goto(this.filterUrl, { waitUntil: 'domcontentloaded' });
-        await this.advertisementsPage.click(websiteSelectors.closeCookie);
+    private getAdvertisementsFromPage = async (pageAddress: string) => {
+        await this.browserPage.goto(pageAddress, { waitUntil: 'domcontentloaded' });
 
-        const advertisementsTable = await this.advertisementsPage.$$(websiteSelectors.tableOffers);
-        const advertisements = advertisementsTable.map(advertisementElement => {
-            return Advertisement.build(advertisementElement);
-        });
+        const advertisementsTable = await this.browserPage.$$(websiteSelectors.advertisements);
 
-        return (await Promise.all(advertisements).then(advertisements => {
-            const newAdvertisements = advertisements.filter(
+        return Promise.all(
+            advertisementsTable.map(advertisementElement => {
+                return Advertisement.build(advertisementElement);
+            }),
+        );
+    };
+
+    private getNewAdvertisements = async (): Promise<Advertisement[]> => {
+        let pageAddress: string | undefined | null = this.filterUrl;
+        const newAdvertisements = [];
+        while (pageAddress) {
+            const advertisements = await this.getAdvertisementsFromPage(pageAddress);
+            const newAdvertisementsFromCurrentPage = advertisements.filter(
                 advertisement => advertisement && this.checkedAdvertisements.has(advertisement.href) === false,
-            );
-            newAdvertisements.forEach(advertisement => this.checkedAdvertisements.add(advertisement!.href));
-            return newAdvertisements;
-        })) as Advertisement[];
+            ) as Advertisement[];
+            newAdvertisements.push(...newAdvertisementsFromCurrentPage);
+
+            if (newAdvertisementsFromCurrentPage.length !== advertisements.length) break;
+            pageAddress = await getAttributeValue(this.browserPage, websiteSelectors.nextPage, 'href');
+            if (!pageAddress) console.warn('Cannot find link to the next page of advertisements');
+        }
+
+        return newAdvertisements;
     };
 
     // TODO: should we send advertisement, which has not found location ?

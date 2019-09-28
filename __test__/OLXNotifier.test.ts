@@ -1,8 +1,9 @@
 import { Config, OLXNotifier } from '../src/OLXNotifier';
-import { Browser } from 'puppeteer';
+import { Browser, Page } from 'puppeteer';
 import { Advertisement } from '../src/Advertisement/Advertisement';
-import { EmailService } from '../src/EmailService/EmailService';
 import { TransportInformation } from '../src/TransportConnection/TransportConnection';
+import { mocked } from 'ts-jest/utils';
+import * as puppeteerUtils from '../src/utils/puppeteer';
 
 const mockEmailService = {
     sendEmails: jest.fn(),
@@ -40,68 +41,35 @@ jest.mock('../src/EmailService/EmailService', () => {
         })),
     };
 });
+jest.mock('delay');
 
 describe('OLXNotifier', () => {
+    beforeAll(() => {
+        Advertisement.build = jest.fn();
+    });
+
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    describe('build', () => {
-        let browser: any;
-        beforeAll(() => {
-            browser = {
-                newPage: jest.fn().mockResolvedValue({
-                    goto: () => {},
-                    $: jest.fn().mockReturnValue(true),
-                }),
-            };
-        });
-
-        test('should return instance of OLXNotifier', async () => {
-            Advertisement.build = jest.fn().mockResolvedValue({});
-
-            expect(await OLXNotifier.build(browser, '', {} as Config)).toBeInstanceOf(OLXNotifier);
-        });
-
-        test('return undefined if cannot find advertisements table', async () => {
-            browser = {
-                newPage: jest.fn().mockResolvedValue({
-                    goto: () => {},
-                    $: jest.fn().mockReturnValue(null),
-                }),
-            };
-
-            expect(await OLXNotifier.build(browser, '', {} as Config)).toBeUndefined();
-        });
-
-        test('return undefined if cannot create Advertisement object', async () => {
-            Advertisement.build = jest.fn().mockResolvedValue(undefined);
-
-            expect(await OLXNotifier.build(browser, '', {} as Config)).toBeUndefined();
-        });
-    });
-
     describe('examineAdvertisements', () => {
-        const mockAdvertisementsPage = {
-            goto: () => {},
+        const mockBrowserPage = {
+            goto: jest.fn().mockResolvedValue({}),
             $$: jest.fn(),
             click: () => {},
-        };
-
-        let olxNotifier: OLXNotifier;
-        beforeEach(() => {
-            olxNotifier = new OLXNotifier(new EmailService({} as Config), {} as Browser, mockAdvertisementsPage as any, '', false);
-        });
+        } as Record<keyof Page, any>;
 
         test('should make emails only for new not previously met advertisements', async () => {
+            mockBrowserPage.$$.mockResolvedValueOnce([]);
+            const olxNotifier = new OLXNotifier({} as Browser, mockBrowserPage, 'https://olx.pl/warsaw/', {} as Config);
+
             const advertisements = [
                 new Advertisement('olx.pl/1', 'dzisiaj 11:30', 'First Advertisement'),
                 new Advertisement('olx.pl/2', 'dzisiaj 11:30', 'Second Advertisement'),
                 new Advertisement('olx.pl/3', 'dzisiaj 11:30', 'Third Advertisement'),
             ];
-            advertisements.forEach(advertisement => (advertisement.isPerfectLocated = true));
-            // found 3 advertisements
-            mockAdvertisementsPage.$$.mockResolvedValue([1, 2]);
+            // found 2 advertisements
+            mockBrowserPage.$$.mockResolvedValueOnce([1, 2]);
             Advertisement.build = jest
                 .fn()
                 .mockResolvedValueOnce(advertisements[0])
@@ -110,7 +78,7 @@ describe('OLXNotifier', () => {
             await olxNotifier.examineAdvertisements();
 
             // found 2 advertisements
-            mockAdvertisementsPage.$$.mockResolvedValue([1, 2]);
+            mockBrowserPage.$$.mockResolvedValueOnce([1, 2]);
             Advertisement.build = jest
                 .fn()
                 .mockResolvedValueOnce(advertisements[0])
@@ -121,11 +89,13 @@ describe('OLXNotifier', () => {
             expect(mockEmailService.sendEmails).toHaveBeenCalledTimes(2);
             expect(mockEmailService.sendEmails.mock.calls[0][0]).toHaveLength(2);
             expect(mockEmailService.sendEmails.mock.calls[1][0]).toHaveLength(1);
-        });
+        }, 9999999);
 
         test('should not make emails for worse advertisement', async () => {
-            // found 1 Advertisement
-            mockAdvertisementsPage.$$.mockResolvedValue([1]);
+            mockBrowserPage.$$.mockResolvedValueOnce([]);
+            const olxNotifier = new OLXNotifier({} as Browser, mockBrowserPage, 'https://olx.pl/warsaw/', {} as Config);
+            // found 1 advertisements
+            mockBrowserPage.$$.mockResolvedValueOnce([1]);
             const advertisement = new Advertisement('olx.pl/1', 'dzisiaj 11:00', 'First Advertisement');
             advertisement.isWorse = true;
             Advertisement.build = jest.fn().mockResolvedValue(advertisement);
@@ -136,27 +106,33 @@ describe('OLXNotifier', () => {
         });
 
         test('should make email for worse advertisement if we set config option to send this type of worse advertisements', async () => {
-            olxNotifier = new OLXNotifier(new EmailService({} as Config), {} as Browser, mockAdvertisementsPage as any, '', true);
-            // found 2 advertisement
-            mockAdvertisementsPage.$$.mockResolvedValue([1, 2]);
-            const firstAdvertisement = new Advertisement('olx.pl/1', 'dzisiaj 11:00', 'Good Advertisement');
-            firstAdvertisement.isWorse = false;
-            const secondAdvertisement = new Advertisement('olx.pl/2', 'dzisiaj 11:00', 'Worse Advertisement');
-            secondAdvertisement.isWorse = true;
+            mockBrowserPage.$$.mockResolvedValueOnce([]);
+            const olxNotifier = new OLXNotifier({} as Browser, mockBrowserPage, 'https://olx.pl/warsaw/', {
+                sendWorseAdvertisements: true,
+            } as Config);
+            // found 2 advertisements
+            mockBrowserPage.$$.mockResolvedValueOnce([1, 2]);
+            const goodAdvertisement = new Advertisement('olx.pl/1', 'dzisiaj 11:00', 'Good Advertisement');
+            goodAdvertisement.isWorse = false;
+            const worseAdvertisement = new Advertisement('olx.pl/2', 'dzisiaj 11:00', 'Worse Advertisement');
+            worseAdvertisement.isWorse = true;
             Advertisement.build = jest
                 .fn()
-                .mockResolvedValueOnce(firstAdvertisement)
-                .mockResolvedValueOnce(secondAdvertisement);
+                .mockResolvedValueOnce(goodAdvertisement)
+                .mockResolvedValueOnce(worseAdvertisement);
 
             await olxNotifier.examineAdvertisements();
 
             expect(mockEmailService.sendEmails).toHaveBeenCalledTimes(2);
-        });
+        }, 999999);
 
         test('should make composed email if we set config option for composing advertisements info to one email', async () => {
-            olxNotifier = new OLXNotifier(new EmailService({} as Config), {} as Browser, mockAdvertisementsPage as any, '', false, true);
-            // found 2 Advertisement
-            mockAdvertisementsPage.$$.mockResolvedValue([1, 2]);
+            mockBrowserPage.$$.mockResolvedValueOnce([]);
+            const olxNotifier = new OLXNotifier({} as Browser, mockBrowserPage, 'http://olx.pl/warsaw/', {
+                composeIteration: true,
+            } as Config);
+            // found 2 advertisements
+            mockBrowserPage.$$.mockResolvedValueOnce([1, 2]);
             const firstAdvertisement = new Advertisement('olx.pl/1', 'dzisiaj 11:00', 'First Advertisement');
             const secondAdvertisement = new Advertisement('olx.pl/2', 'dzisiaj 11:00', 'Second Advertisement');
             Advertisement.build = jest
@@ -167,12 +143,15 @@ describe('OLXNotifier', () => {
             await olxNotifier.examineAdvertisements();
 
             expect(mockEmailService.sendEmails.mock.calls[0][0]).toHaveLength(1);
-        });
+        }, 9999999);
 
         test('should clear sent emails between iterations', async () => {
-            olxNotifier = new OLXNotifier(new EmailService({} as Config), {} as Browser, mockAdvertisementsPage as any, '', true, true);
-            // found 2 Advertisement
-            mockAdvertisementsPage.$$.mockResolvedValue([1, 2]);
+            mockBrowserPage.$$.mockResolvedValueOnce([]);
+            const olxNotifier = new OLXNotifier({} as Browser, mockBrowserPage, 'http://olx.pl/warsaw/', {
+                sendWorseAdvertisements: true,
+            } as Config);
+            // found 2 advertisement
+            mockBrowserPage.$$.mockResolvedValueOnce([1, 2]);
             const goodAdvertisement = new Advertisement('olx.pl/1', 'dzisiaj 11:00', 'Good Advertisement');
             const worseAdvertisement = new Advertisement('olx.pl/1', 'dzisiaj 11:00', 'Worst Advertisement');
             worseAdvertisement.isWorse = true;
@@ -181,6 +160,8 @@ describe('OLXNotifier', () => {
                 .mockResolvedValueOnce(goodAdvertisement)
                 .mockResolvedValueOnce(worseAdvertisement);
 
+            // found 0 advertisements
+            mockBrowserPage.$$.mockResolvedValueOnce([]);
             await olxNotifier.examineAdvertisements();
             expect(mockEmailService.sendEmails).toHaveBeenCalledTimes(2);
             mockEmailService.sendEmails.mockClear();
@@ -188,6 +169,66 @@ describe('OLXNotifier', () => {
             await olxNotifier.examineAdvertisements();
 
             expect(mockEmailService.sendEmails).not.toHaveBeenCalled();
+        }, 999999);
+
+        describe('get advertisements from multiple pages', () => {
+            const advertisements = [
+                new Advertisement('olx.pl/1', 'dzisiaj 11:00', 'Advertisement'),
+                new Advertisement('olx.pl/2', 'dzisiaj 11:00', 'Advertisement'),
+                new Advertisement('olx.pl/3', 'dzisiaj 11:00', 'Advertisement'),
+                new Advertisement('olx.pl/4', 'dzisiaj 11:00', 'Advertisement'),
+                new Advertisement('olx.pl/5', 'dzisiaj 11:00', 'Advertisement'),
+                new Advertisement('olx.pl/6', 'dzisiaj 11:00', 'Advertisement'),
+            ];
+
+            const spyGetHrefAttributeOfNextPage = jest.spyOn(puppeteerUtils, 'getAttributeValue');
+
+            let olxNotifier: OLXNotifier;
+            beforeEach(() => {
+                mockBrowserPage.$$.mockResolvedValueOnce([1]);
+                mocked(Advertisement.build).mockResolvedValueOnce(advertisements[0]);
+                olxNotifier = new OLXNotifier({} as Browser, mockBrowserPage, 'http://olx.pl/warsaw/', {
+                    sendWorseAdvertisements: true,
+                } as Config);
+            });
+
+            test('until we met advertisements from previous iterations', async () => {
+                // first page
+                mockBrowserPage.$$.mockResolvedValueOnce([1, 2]);
+                mocked(Advertisement.build)
+                    .mockResolvedValueOnce(advertisements[5])
+                    .mockResolvedValueOnce(advertisements[4]);
+                // second page
+                jest.spyOn(puppeteerUtils, 'getAttributeValue').mockResolvedValueOnce('http://olx.pl/warsaw/second_page');
+                mockBrowserPage.$$.mockResolvedValueOnce([1, 2]);
+                mocked(Advertisement.build)
+                    .mockResolvedValueOnce(advertisements[3])
+                    .mockResolvedValueOnce(advertisements[2]);
+                // third page
+                jest.spyOn(puppeteerUtils, 'getAttributeValue').mockResolvedValueOnce('http://olx.pl/warsaw/third_page');
+                mockBrowserPage.$$.mockResolvedValueOnce([1, 2]);
+                mocked(Advertisement.build)
+                    .mockResolvedValueOnce(advertisements[1])
+                    .mockResolvedValueOnce(advertisements[0]);
+
+                await olxNotifier!.examineAdvertisements();
+                expect(mockEmailService.sendEmails).toHaveBeenCalledTimes(1);
+                expect(mockEmailService.sendEmails.mock.calls[0][0]).toHaveLength(5);
+                expect(spyGetHrefAttributeOfNextPage).toHaveBeenCalledTimes(2);
+            });
+
+            test('until we do not get address of next page', async () => {
+                // first page
+                mockBrowserPage.$$.mockResolvedValueOnce([1, 2]);
+                mocked(Advertisement.build)
+                    .mockResolvedValueOnce(advertisements[5])
+                    .mockResolvedValueOnce(advertisements[4]);
+
+                await olxNotifier!.examineAdvertisements();
+                expect(mockEmailService.sendEmails).toHaveBeenCalledTimes(1);
+                expect(spyGetHrefAttributeOfNextPage).toHaveBeenCalledTimes(1);
+                expect(mockBrowserPage.goto).toHaveBeenCalledTimes(2);
+            });
         });
     });
 });
