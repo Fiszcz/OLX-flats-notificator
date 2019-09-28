@@ -67,11 +67,15 @@ export class Advertisement {
         const basicLocationOfFlat = await getTextContent(this.advertisementPage!, websiteSelectors.olx.basicLocationOfFlat);
         const locationOfFlat = findLocationOfFlatInDescription(this.title + ', ' + this.description);
         this.location = basicLocationOfFlat || '' + locationOfFlat || '' || undefined;
+
+        await click(this.advertisementPage!, websiteSelectors.olx.closeCookie);
     };
 
     private getDataFromOtodomAdvertisement = async () => {
         this.description = (await getTextContent(this.advertisementPage!, websiteSelectors.otoDom.advertisementDescription)) || undefined;
         this.location = (await getTextContent(this.advertisementPage!, websiteSelectors.otoDom.locationOfFlat)) || undefined;
+
+        await click(this.advertisementPage!, websiteSelectors.otoDom.closeCookie);
     };
 
     public takeScreenshot = async () => {
@@ -84,7 +88,6 @@ export class Advertisement {
                 '_' +
                 (Math.floor(Math.random() * 100) + 1).toString() +
                 '.png';
-            await click(this.advertisementPage, websiteSelectors.closeCookie);
             await this.advertisementPage.screenshot({ path: this.screenshotPath, fullPage: true });
             console.log('Screenshot has been taken - file: ' + this.screenshotPath + ' from: ' + this.href);
             return this.screenshotPath;
