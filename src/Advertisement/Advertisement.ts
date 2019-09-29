@@ -9,18 +9,36 @@ export class Advertisement {
     public href: string;
     public title: string = '';
     public description?: string;
-    public location?: string;
     public isPerfectLocated: boolean = false;
     public transportInformation?: TransportInformation[];
     public screenshotPath?: string;
     public isWorse?: boolean;
 
     private advertisementPage?: Page;
+    private readonly maxRentCosts?: number;
+    private readonly maxPriceWithRent?: number;
 
-    constructor(href: string, time: string, title: string) {
+    private _rentCosts?: number;
+    public get rentCosts() {
+        return this._rentCosts;
+    }
+
+    private _price?: number;
+    public get price() {
+        return this._price;
+    }
+
+    private _location?: string;
+    public get location() {
+        return this._location;
+    }
+
+    constructor(href: string, time: string, title: string, maxRent?: number, maxPriceWithRent?: number) {
         this.href = href;
         this.time = time;
         this.title = title;
+        this.maxRentCosts = maxRent;
+        this.maxPriceWithRent = maxPriceWithRent;
     }
 
     static build = async (advertisementElement: ElementHandle) => {
@@ -45,37 +63,62 @@ export class Advertisement {
     public openAdvertisement = async (browser: Browser) => {
         this.advertisementPage = await openPageOnURL(browser, this.href);
 
-        if (this.href.startsWith('https://www.otodom.pl')) await this.getDataFromOtodomAdvertisement();
-        else await this.getDataFromOLXAdvertisement();
+        let selectors;
+        if (this.href.startsWith('https://www.otodom.pl')) {
+            await this.getLocationFromOtodomAdvertisement();
+            selectors = websiteSelectors.otoDom;
+        } else {
+            await this.getLocationFromOLXAdvertisement();
+            selectors = websiteSelectors.olx;
+        }
+        await this.getDataFromAdvertisement(selectors);
+        await click(this.advertisementPage, selectors.closeCookie);
 
         this.isPerfectLocated = isPerfectLocation(`${this.title}, ${this.description}`);
-        if (this.location) {
-            this.transportInformation = await checkTransportTime(this.location);
-            this.isWorse = this.transportInformation.some(transportInformation => transportInformation.hasSatisfiedTime === false);
+        if (this._location) {
+            this.transportInformation = await checkTransportTime(this._location);
         }
+        this.isWorse = this.isWorseAdvertisement();
 
         if (this.description === undefined)
             console.warn('Cannot find description of open advertisement: ' + this.title + '\nWith address: ' + this.href + '\n');
-        if (this.location === undefined)
+        if (this._location === undefined)
             console.warn('Cannot find location of flat in open advertisement: ' + this.title + '\nWith address: ' + this.href + '\n');
-        if (this.location && this.transportInformation && this.transportInformation.length === 0)
-            console.warn('Cannot calculate of transport connection for location: ' + this.location);
+        if (this._location && this.transportInformation && this.transportInformation.length === 0)
+            console.warn('Cannot calculate of transport connection for location: ' + this._location);
     };
 
-    private getDataFromOLXAdvertisement = async () => {
-        this.description = (await getTextContent(this.advertisementPage!, websiteSelectors.olx.advertisementDescription)) || undefined;
+    private isWorseAdvertisement = (): boolean => {
+        if (
+            this.transportInformation &&
+            this.transportInformation.some(transportInformation => transportInformation.hasSatisfiedTime === false)
+        )
+            return true;
+        if (this.maxRentCosts !== undefined && this.rentCosts && this.rentCosts > this.maxRentCosts) return true;
+        if (this.maxPriceWithRent && this.price && this.price + (this.rentCosts || 0) > this.maxPriceWithRent) return true;
+        return false;
+    };
+
+    private getDataFromAdvertisement = async (selectors: Record<'advertisementDescription' | 'rentCosts' | 'price', string>) => {
+        this.description = await getTextContent(this.advertisementPage!, selectors.advertisementDescription);
+        const rentCostsString = await getTextContent(this.advertisementPage!, selectors.rentCosts);
+        if (rentCostsString) {
+            const rentCosts = Number(rentCostsString.replace(/\D/g, ''));
+            if (rentCosts === 1) this._rentCosts = 0;
+            else this._rentCosts = rentCosts;
+        }
+        const price = await getTextContent(this.advertisementPage!, selectors.price);
+        if (price) this._price = Number(price.replace(/\D/g, ''));
+    };
+
+    private getLocationFromOLXAdvertisement = async () => {
         const basicLocationOfFlat = await getTextContent(this.advertisementPage!, websiteSelectors.olx.basicLocationOfFlat);
         const locationOfFlat = findLocationOfFlatInDescription(this.title + ', ' + this.description);
-        this.location = basicLocationOfFlat || '' + locationOfFlat || '' || undefined;
-
-        await click(this.advertisementPage!, websiteSelectors.olx.closeCookie);
+        this._location = basicLocationOfFlat || '' + locationOfFlat || '' || undefined;
     };
 
-    private getDataFromOtodomAdvertisement = async () => {
-        this.description = (await getTextContent(this.advertisementPage!, websiteSelectors.otoDom.advertisementDescription)) || undefined;
-        this.location = (await getTextContent(this.advertisementPage!, websiteSelectors.otoDom.locationOfFlat)) || undefined;
-
-        await click(this.advertisementPage!, websiteSelectors.otoDom.closeCookie);
+    private getLocationFromOtodomAdvertisement = async () => {
+        this._location = await getTextContent(this.advertisementPage!, websiteSelectors.otoDom.locationOfFlat);
     };
 
     public takeScreenshot = async () => {

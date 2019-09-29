@@ -8,10 +8,14 @@ export const websiteSelectors = {
         advertisementDescription: 'div.clr.large',
         basicLocationOfFlat: '.show-map-link strong',
         closeCookie: '.cookie-close',
+        rentCosts: "//th[contains(text(), 'Czynsz')]/following-sibling::td",
+        price: '.price-label > strong',
     },
     otoDom: {
         advertisementDescription: 'section.section-description',
         locationOfFlat: 'header a',
         closeCookie: '.cookiesBarClose.icon-close',
+        rentCosts: "//li[contains(text(), 'Czynsz')]/strong",
+        price: "//header//ancestor::div[contains(text(), 'zł')]",
     },
 };

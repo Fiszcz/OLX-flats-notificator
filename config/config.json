@@ -14,6 +14,8 @@
         "weekday": "monday",
         "time": "10:30"
     },
+    "maxRent": 1000,
+    "maxPriceWithRent": 3000,
     "transportMode": "driving",
     "filterUrls": [""],
     "checkInterval": 30,

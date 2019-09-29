@@ -37,24 +37,21 @@ describe('Advertisement', () => {
     });
 
     describe('openAdvertisement', () => {
-        describe('should set description and flat location of advertisement for', () => {
-            beforeAll(() => {
-                websiteSelectors.otoDom.advertisementDescription = 'otoDom';
-                websiteSelectors.otoDom.locationOfFlat = 'otoDom location';
-                websiteSelectors.olx.advertisementDescription = 'olx';
-                websiteSelectors.olx.basicLocationOfFlat = 'olx basic location';
+        beforeAll(() => {
+            websiteSelectors.otoDom.locationOfFlat = 'otoDom location';
+            websiteSelectors.olx.basicLocationOfFlat = 'olx basic location';
 
-                mocked(getTextContent).mockImplementation((element, selector) => Promise.resolve(selector));
-                mocked(openPageOnURL).mockResolvedValue({} as Page);
-                mocked(checkTransportTime).mockResolvedValue([]);
-            });
+            mocked(getTextContent).mockImplementation((element, selector) => Promise.resolve(selector));
+            mocked(openPageOnURL).mockResolvedValue({} as Page);
+            mocked(checkTransportTime).mockResolvedValue([]);
+        });
 
+        describe('should set flat location of advertisement for', () => {
             test('otodom website', async () => {
                 const otodomAdvertisement = new Advertisement('https://www.otodom.pl', 'dzisiaj 01:01', '');
 
                 await otodomAdvertisement.openAdvertisement({} as Browser);
 
-                expect(otodomAdvertisement.description).toBe('otoDom');
                 expect(otodomAdvertisement.location).toBe('otoDom location');
             });
 
@@ -63,13 +60,40 @@ describe('Advertisement', () => {
 
                 await olxAdvertisement.openAdvertisement({} as Browser);
 
-                expect(olxAdvertisement.description).toBe('olx');
                 expect(olxAdvertisement.location).toBe('olx basic location');
             });
+        });
 
-            test('should mark that advertisement has worse transport time', async () => {
+        describe('should get rent costs from advertisement', () => {
+            test('and save 0 if this rent costs have 0 or 1 value', async () => {
+                const advertisement = new Advertisement('https://www.otodom.pl', 'dzisiaj 01:01', '');
+                websiteSelectors.otoDom.rentCosts = '0 zł';
+
+                await advertisement.openAdvertisement({} as Browser);
+
+                expect(advertisement.rentCosts).toBe(0);
+
+                websiteSelectors.otoDom.rentCosts = '1 zł';
+
+                await advertisement.openAdvertisement({} as Browser);
+
+                expect(advertisement.rentCosts).toBe(0);
+            });
+
+            test('and save proper value', async () => {
+                const advertisement = new Advertisement('https://www.otodom.pl', 'dzisiaj 01:01', '');
+                websiteSelectors.otoDom.rentCosts = '2 599 zł';
+
+                await advertisement.openAdvertisement({} as Browser);
+
+                expect(advertisement.rentCosts).toBe(2599);
+            });
+        });
+
+        describe('should mark that advertisement is worse', () => {
+            test('if advertisement has worse location', async () => {
                 const advertisement = new Advertisement('https://www.olx.pl', 'dzisiaj 01:01', '');
-                advertisement.location = 'Location of flat';
+                websiteSelectors.olx.basicLocationOfFlat = 'some location';
                 mocked(checkTransportTime).mockResolvedValue([{ hasSatisfiedTime: false }] as TransportInformation[]);
 
                 await advertisement.openAdvertisement({} as Browser);
@@ -82,6 +106,37 @@ describe('Advertisement', () => {
 
                 expect(advertisement.isWorse).toBe(false);
             });
+
+            test('if advertisement has too high rent costs', async () => {
+                const advertisement = new Advertisement('https://www.olx.pl', 'dzisiaj 01:01', '', 1000);
+                websiteSelectors.olx.rentCosts = '1 500 zł';
+
+                await advertisement.openAdvertisement({} as Browser);
+
+                expect(advertisement.isWorse).toBe(true);
+
+                websiteSelectors.olx.rentCosts = '500 zł';
+
+                await advertisement.openAdvertisement({} as Browser);
+
+                expect(advertisement.isWorse).toBe(false);
+            });
+
+            test('if advertisement has too high price', async () => {
+                const advertisement = new Advertisement('https://www.olx.pl', 'dzisiaj 01:01', '', 200, 3000);
+                websiteSelectors.olx.rentCosts = '100 zł';
+                websiteSelectors.olx.price = '2950 zł';
+
+                await advertisement.openAdvertisement({} as Browser);
+
+                expect(advertisement.isWorse).toBe(true);
+
+                websiteSelectors.olx.price = '1500 zł';
+
+                await advertisement.openAdvertisement({} as Browser);
+
+                expect(advertisement.isWorse).toBe(false);
+            });
         });
     });
 
@@ -89,7 +144,9 @@ describe('Advertisement', () => {
         test('if there is open page with advertisement should take screenshot', async () => {
             websiteSelectors.olx.advertisementDescription = 'olx';
             mocked(getTextContent).mockImplementation((element, selector) => Promise.resolve(selector));
-            mocked(openPageOnURL).mockResolvedValue({ screenshot: () => {} } as Page);
+            mocked(openPageOnURL).mockResolvedValue({
+                screenshot: () => {},
+            } as Page);
             mocked(checkTransportTime).mockResolvedValue([]);
 
             const otodomAdvertisement = new Advertisement('https://www.otodom.pl', '01:02', 'Advertisement subject');

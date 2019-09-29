@@ -72,6 +72,18 @@
                 }
             }
         },
+        "maxRent": {
+            "type": "number",
+            "title": "Max rent costs of flat",
+            "examples": [500],
+            "minimum": 0
+        },
+        "maxPriceWithRent": {
+            "type": "number",
+            "title": "Max price (plus rent) of flat",
+            "examples": [3000],
+            "exclusiveMinimum": 0
+        },
         "departureTime": {
             "type": "object",
             "title": "Chosen departure time of checking transport connections",
