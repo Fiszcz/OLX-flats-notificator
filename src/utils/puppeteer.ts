@@ -5,32 +5,41 @@ const getElementForSelector = async (element: ElementHandle | Page, selector: st
     if (selector.startsWith('//')) elementForSelector = (await element.$x(selector))[0];
     else elementForSelector = await element.$(selector);
 
-    if (elementForSelector) return elementForSelector;
-    else throw new Error();
+    return elementForSelector || undefined;
+};
+
+export const getElements = async (rootElement: ElementHandle | Page, selector: string) => {
+    let elementsForSelector: ElementHandle[] | null;
+    if (selector.startsWith('//')) elementsForSelector = await rootElement.$x(selector);
+    else elementsForSelector = await rootElement.$$(selector);
+
+    return elementsForSelector;
 };
 
 export const getAttributeValue = async (rootElement: ElementHandle | Page, selector: string, attribute: string) => {
+    const elementForSelector = await getElementForSelector(rootElement, selector);
     try {
-        const elementForSelector = await getElementForSelector(rootElement, selector);
-        return (
-            (await elementForSelector.$eval('*', element => {
-                return element.getAttribute(attribute);
-            })) || undefined
-        );
-    } catch (e) {
+        if (elementForSelector)
+            return (
+                (await elementForSelector.$eval('*', element => {
+                    return element.getAttribute(attribute);
+                })) || undefined
+            );
+    } catch {
         return undefined;
     }
 };
 
 export const getTextContent = async (rootElement: ElementHandle | Page, selector: string) => {
+    const elementForSelector = await getElementForSelector(rootElement, selector);
     try {
-        const elementForSelector = await getElementForSelector(rootElement, selector);
-        return (
-            (await elementForSelector.$eval('*', element => {
-                return element.textContent;
-            })) || undefined
-        );
-    } catch (e) {
+        if (elementForSelector)
+            return (
+                (await elementForSelector.$eval('*', element => {
+                    return element.textContent;
+                })) || undefined
+            );
+    } catch {
         return undefined;
     }
 };
@@ -42,10 +51,10 @@ export const openPageOnURL = async (browser: Browser, url: string) => {
 };
 
 export const click = async (page: Page, selector: string) => {
+    const elementForSelector = await getElementForSelector(page, selector);
     try {
-        const elementForSelector = await getElementForSelector(page, selector);
-        await elementForSelector.click();
-    } catch (e) {
-        return undefined;
+        if (elementForSelector) await elementForSelector.click();
+    } catch {
+        return;
     }
 };

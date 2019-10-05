@@ -57,6 +57,7 @@ describe('OLXNotifier', () => {
             goto: jest.fn().mockResolvedValue({}),
             $$: jest.fn(),
             click: () => {},
+            $: () => {},
         } as Record<keyof Page, any>;
 
         test('should make emails only for new not previously met advertisements', async () => {

@@ -5,7 +5,7 @@ import { websiteSelectors } from '../config/websiteSelectors';
 import { Advertisement } from './Advertisement/Advertisement';
 import { EmailMessage } from './EmailMessage/EmailMessage';
 import { composeEmailMessages } from './EmailMessage/composeEmailMessages';
-import { getAttributeValue } from './utils/puppeteer';
+import { getAttributeValue, getElements } from './utils/puppeteer';
 import AsyncLock from 'async-lock';
 
 export interface Config {
@@ -86,7 +86,7 @@ export class OLXNotifier {
     private getAdvertisementsFromPage = async (pageAddress: string) => {
         await this.browserPage.goto(pageAddress, { waitUntil: 'domcontentloaded' });
 
-        const advertisementsTable = await this.browserPage.$$(websiteSelectors.advertisements);
+        const advertisementsTable = await getElements(this.browserPage, websiteSelectors.advertisements);
 
         return Promise.all(
             advertisementsTable.map(advertisementElement => {
