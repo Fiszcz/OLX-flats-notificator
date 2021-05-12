@@ -19,7 +19,7 @@
     "inquirer": "^6.5.1",
     "mockdate": "^2.0.5",
     "node-filter-async": "^1.1.1",
-    "nodemailer": "^5.1.1",
+    "nodemailer": "^6.4.16",
     "puppeteer": "^1.13.0",
     "snyk": "^1.425.4"
   },
