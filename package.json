@@ -9,7 +9,7 @@
     "start": "node src/index.js",
     "test": "jest",
     "test-and-Coverage": "jest --collect-coverage",
-    "snyk-protect": "snyk protect",
+    "snyk-protect": "snyk-protect",
     "prepublish": "yarn run snyk-protect"
   },
   "dependencies": {
@@ -21,7 +21,7 @@
     "node-filter-async": "^1.1.1",
     "nodemailer": "^5.1.1",
     "puppeteer": "^1.13.0",
-    "snyk": "^1.425.4"
+    "@snyk/protect": "latest"
   },
   "devDependencies": {
     "@types/async-lock": "^1.1.1",
